@@ -1,0 +1,1435 @@
+<title>Calculadora de Finiquito</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16213a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Finiquito">
+<link rel="apple-touch-icon" id="appleTouchIcon">
+<link rel="manifest" id="manifestLink">
+<style>
+  :root {
+    --ink: #002040;
+    --ink-soft: #3c5170;
+    --ink-faint: #74839a;
+    --paper: #f2ede2;
+    --paper-raised: #fdfbf7;
+    --line: #ded6c4;
+    --accent: #c09868;
+    --accent-strong: #9c7a48;
+    --accent-soft: #f2e6d3;
+    --total-bg: #002040;
+    --total-fg: #f5efe0;
+    --danger: #8a3324;
+    --focus: #2a5db0;
+    --shadow: 0 1px 2px rgba(22,33,58,0.06), 0 8px 24px -12px rgba(22,33,58,0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e9e7dc;
+      --ink-soft: #b7bbc9;
+      --ink-faint: #838ba1;
+      --paper: #141a26;
+      --paper-raised: #1b2333;
+      --line: #303a4f;
+      --accent: #c9a374;
+      --accent-strong: #d9b273;
+      --accent-soft: #2c2717;
+      --total-bg: #c09868;
+      --total-fg: #002040;
+      --danger: #d98a76;
+      --focus: #7aa6ec;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 30px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e9e7dc; --ink-soft: #b7bbc9; --ink-faint: #838ba1;
+    --paper: #141a26; --paper-raised: #1b2333; --line: #303a4f;
+    --accent: #c9a374; --accent-strong: #d9b273; --accent-soft: #2c2717;
+    --total-bg: #c09868; --total-fg: #002040; --danger: #d98a76; --focus: #7aa6ec;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 30px -14px rgba(0,0,0,0.6);
+  }
+  :root[data-theme="light"] {
+    --ink: #002040; --ink-soft: #3c5170; --ink-faint: #74839a;
+    --paper: #f2ede2; --paper-raised: #fdfbf7; --line: #ded6c4;
+    --accent: #c09868; --accent-strong: #9c7a48; --accent-soft: #f2e6d3;
+    --total-bg: #002040; --total-fg: #f5efe0; --danger: #8a3324; --focus: #2a5db0;
+    --shadow: 0 1px 2px rgba(22,33,58,0.06), 0 8px 24px -12px rgba(22,33,58,0.18);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.45;
+    padding: clamp(20px, 5vw, 56px) 16px 64px;
+  }
+  .page { max-width: 720px; margin: 0 auto; }
+
+  .brand-logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    margin-bottom: 16px;
+  }
+  .masthead {
+    text-align: left;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: Iowan Old Style, "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    font-size: clamp(28px, 4.5vw, 38px);
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .sub {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0;
+    max-width: 54ch;
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: clamp(18px, 4vw, 30px);
+    margin-bottom: 22px;
+  }
+
+  .card h2 {
+    font-family: Iowan Old Style, "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card-head h2 { margin-bottom: 0; }
+  .btn-ghost {
+    font: inherit; font-size: 12.5px; font-weight: 700; color: var(--accent-strong);
+    background: transparent; border: 1px solid var(--accent); border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; flex: none;
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--accent-soft); }
+  .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .card h2 .n {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .checkbox-field { flex-direction: row; }
+  .checkbox-label {
+    display: flex; align-items: flex-start; gap: 9px; cursor: pointer;
+    font-size: 13px; color: var(--ink-soft); font-weight: 500; line-height: 1.4;
+    background: var(--accent-soft); border: 1px solid var(--line); border-radius: 7px;
+    padding: 10px 12px;
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 16px; height: 16px; flex: none; margin-top: 1px; accent-color: var(--accent-strong); cursor: pointer;
+  }
+  label {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  label .hint { font-weight: 400; color: var(--ink-faint); }
+  input, select {
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 9px 10px;
+    width: 100%;
+  }
+  input[type="number"] { font-variant-numeric: tabular-nums; }
+  input:focus, select:focus {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+    border-color: var(--focus);
+  }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%), linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%); background-position: calc(100% - 18px) center, calc(100% - 13px) center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+
+  .date-input { position: relative; }
+  .date-input input { padding-right: 38px; letter-spacing: 0.02em; }
+  .cal-btn {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; border-radius: 5px; cursor: pointer;
+    font-size: 14px; padding: 0; line-height: 1;
+  }
+  .cal-btn:hover { background: var(--accent-soft); }
+  .cal-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+  .cal-popup {
+    position: absolute; z-index: 30; top: calc(100% + 6px); left: 0;
+    width: 264px; background: var(--paper-raised); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); padding: 12px;
+  }
+  .cal-head { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+  .cal-head select {
+    appearance: auto;
+    background-image: none;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 2px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    color: var(--ink);
+    background-color: var(--paper-raised);
+  }
+  .cal-nav-btn {
+    flex: none;
+    background: transparent; border: 1px solid var(--line); border-radius: 5px;
+    width: 24px; height: 24px; font-size: 13px; color: var(--ink); cursor: pointer; padding: 0;
+  }
+  .cal-nav-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-dow { font-size: 10px; text-align: center; color: var(--ink-faint); font-weight: 700; padding-bottom: 4px; }
+  .cal-day {
+    background: transparent; border: none; border-radius: 5px; padding: 6px 0;
+    font-size: 12.5px; font-variant-numeric: tabular-nums; cursor: pointer; color: var(--ink);
+  }
+  .cal-day:hover { background: var(--accent-soft); }
+  .cal-day.today { box-shadow: inset 0 0 0 1px var(--accent); }
+  .cal-day.selected { background: var(--total-bg); color: var(--total-fg); font-weight: 700; }
+
+  .actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+  button {
+    font: inherit;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--total-fg);
+    background: var(--total-bg);
+    border: none;
+    border-radius: 7px;
+    padding: 11px 22px;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .note { font-size: 12.5px; color: var(--ink-faint); }
+
+  .ledger-group { margin-bottom: 18px; }
+  .ledger-group:last-of-type { margin-bottom: 0; }
+  .ledger-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  .ledger-subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 700;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+  .ledger-subtotal .amt {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 13px;
+  }
+  .line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--line);
+  }
+  .line:last-child { border-bottom: none; }
+  .line .desc {
+    flex: none;
+    font-size: 14px;
+    position: relative;
+    padding-left: 13px;
+  }
+  .line .desc::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    transform: translateY(-50%) rotate(45deg);
+  }
+  .line .formula { flex: 1 1 auto; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .line .amt {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  }
+  .line.neg .amt { color: var(--danger); }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--total-bg);
+    color: var(--total-fg);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 18px;
+  }
+  .total-row .label { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; opacity: 0.85; }
+  .total-row .amt { font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace; font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; }
+
+  .datos-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+  }
+  .datos-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .datos-icon {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+  .datos-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
+  .datos-header p { margin: 2px 0 0; font-size: 12px; color: var(--ink-faint); }
+  .datos-nombre {
+    font-family: Iowan Old Style, "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin: -4px 0 16px;
+  }
+  .datos-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+  .datos-col-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+  .datos-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+  .datos-item { margin-bottom: 12px; }
+  .datos-item .dl { margin: 0 0 2px; font-size: 11.5px; font-weight: 700; color: var(--ink); }
+  .datos-item .dv { margin: 0; font-size: 13.5px; }
+  .datos-item .dv.datos-accent { color: var(--accent-strong); }
+  .datos-item .dv.datos-strong { font-weight: 700; }
+  @media (max-width: 560px) {
+    .datos-grid { grid-template-columns: 1fr; }
+  }
+
+  .disclaimer {
+    font-size: 10px;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 6px;
+    line-height: 1.6;
+    text-align: justify;
+  }
+  .contacto {
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin: 4px 0 14px;
+  }
+
+  .empty-state { color: var(--ink-faint); font-size: 14px; text-align: center; padding: 20px 0; }
+  .elaborado { text-align: center; font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; margin: 16px 0 0; }
+
+  .propuestas-card {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .propuestas-nota { font-size: 11.5px; color: var(--ink-faint); margin: -4px 0 12px; }
+  .propuesta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: var(--accent-soft);
+    margin-bottom: 8px;
+  }
+  .propuesta-row:last-child { margin-bottom: 0; }
+  .propuesta-label { font-size: 13.5px; }
+  .propuesta-dias {
+    width: 52px;
+    text-align: center;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 4px;
+    background: var(--paper-raised);
+    color: var(--ink);
+    margin: 0 2px;
+  }
+  .propuesta-amt {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--accent-strong);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    form { grid-template-columns: 1fr; }
+    .line { flex-wrap: wrap; }
+    .line .formula { flex-basis: 100%; order: 3; white-space: normal; }
+  }
+
+  @media print {
+    :root {
+      --ink: #16213a; --ink-soft: #4b5470; --ink-faint: #7d8399;
+      --paper: #ffffff; --paper-raised: #ffffff; --line: #ccc;
+      --accent: #8a5f18; --accent-strong: #6e4b12; --accent-soft: #f1e7d1;
+      --total-bg: #16213a; --total-fg: #f2f1e9; --danger: #8a3324; --shadow: none;
+    }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    body { padding: 0; }
+    .card { box-shadow: none; border: 1px solid var(--line); break-inside: avoid; }
+    .cal-btn, .cal-popup, .actions, .btn-ghost { display: none !important; }
+    input, select { border: 1px solid #999; }
+    .disclaimer { break-inside: avoid; }
+  }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <img src="data:image/png;base64,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" alt="Donceles Consultores" class="brand-logo">
+    <p class="eyebrow">Donceles Abogados · Referencia de cálculo</p>
+    <h1>Calculadora de Finiquito</h1>
+    <p class="sub">Estimación conforme a la Ley Federal del Trabajo (vacaciones dignas, reforma 2023). Ajusta los supuestos según el caso concreto.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">01</span> Datos de la relación laboral</h2>
+    <form id="f">
+      <div class="field full">
+        <label for="nombreTrabajador">Nombre del trabajador <span class="hint">(opcional)</span></label>
+        <input type="text" id="nombreTrabajador" placeholder="Nombre completo" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="ingreso">Fecha de ingreso <span class="hint">(DD/MM/AA)</span></label>
+        <div class="date-input">
+          <input type="text" id="ingreso" inputmode="numeric" placeholder="DD/MM/AA" maxlength="8" autocomplete="off" required>
+          <button type="button" class="cal-btn" data-target="ingreso" aria-label="Abrir calendario">📅</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="baja">Fecha de baja <span class="hint">(DD/MM/AA)</span></label>
+        <div class="date-input">
+          <input type="text" id="baja" inputmode="numeric" placeholder="DD/MM/AA" maxlength="8" autocomplete="off" required>
+          <button type="button" class="cal-btn" data-target="baja" aria-label="Abrir calendario">📅</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="periodicidad">Periodicidad del salario</label>
+        <select id="periodicidad">
+          <option value="mensual" selected>Mensual</option>
+          <option value="quincenal">Quincenal (15 días)</option>
+          <option value="semanal">Semanal (7 días)</option>
+          <option value="diario">Diario</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="salario" id="salarioLabel">Salario mensual bruto <span class="hint">(MXN)</span></label>
+        <input type="number" id="salario" min="0" step="0.01" placeholder="15,000.00" required>
+      </div>
+      <div class="field">
+        <label for="tipo">Tipo de terminación</label>
+        <select id="tipo">
+          <option value="renuncia">Renuncia voluntaria</option>
+          <option value="mutuo_acuerdo">Mutuo acuerdo</option>
+          <option value="termino_contrato">Término de contrato / obra</option>
+          <option value="despido_justificado">Despido justificado (Art. 47)</option>
+          <option value="despido_injustificado">Despido injustificado — indemnización constitucional (Art. 48)</option>
+          <option value="rescision_trabajador">Rescisión por el trabajador, causa imputable al patrón (Art. 51)</option>
+          <option value="negativa_reinstalacion">Negativa patronal a reinstalar tras laudo (Art. 50-III)</option>
+          <option value="insumision_arbitraje">Insumisión al arbitraje por el patrón</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="contratoTipo">Tipo de contrato <span class="hint">(Art. 50-I / 50-II)</span></label>
+        <select id="contratoTipo">
+          <option value="indeterminado" selected>Tiempo indeterminado</option>
+          <option value="determinado">Tiempo u obra determinada</option>
+        </select>
+      </div>
+      <div class="field full checkbox-field">
+        <label class="checkbox-label">
+          <input type="checkbox" id="recorteMaquinaria">
+          <span>Fue por recorte de personal — nueva maquinaria (Art. 439): indemnización constitucional de 120 días en vez de 90, y da derecho a los 20 días por año</span>
+        </label>
+      </div>
+      <div class="field full checkbox-field">
+        <label class="checkbox-label">
+          <input type="checkbox" id="primaAntiguedadVoluntaria">
+          <span>Pagar prima de antigüedad de forma voluntaria — pactada en mutuo acuerdo u otra terminación, aunque no aplique por ley (menos de 15 años y sin despido)</span>
+        </label>
+      </div>
+      <div class="field">
+        <label for="diasPendientes">Días de salario pendientes de pago <span class="hint">(opcional)</span></label>
+        <input type="number" id="diasPendientes" min="0" step="0.5" value="0">
+      </div>
+      <div class="field">
+        <label for="vacacionesPendientes">Días de vacaciones pendientes <span class="hint">(años anteriores no gozadas/pagadas)</span></label>
+        <input type="number" id="vacacionesPendientes" min="0" step="0.5" value="0">
+      </div>
+      <div class="field">
+        <label for="primaVacacionalPendienteDias">Días de prima vacacional pendiente <span class="hint">(se multiplican × 25%)</span></label>
+        <input type="number" id="primaVacacionalPendienteDias" min="0" step="0.5" value="0">
+      </div>
+      <div class="field">
+        <label for="gratificacionDias">Días de gratificación <span class="hint">(opcional — no exigida por LFT)</span></label>
+        <input type="number" id="gratificacionDias" min="0" step="0.5" value="0">
+      </div>
+      <div class="field">
+        <label for="salarioMinimo">Salario mínimo diario vigente <span class="hint">(tope prima antigüedad)</span></label>
+        <input type="number" id="salarioMinimo" min="0" step="0.01" value="315.04">
+      </div>
+      <div class="field">
+        <label for="fechaPago">Fecha de pago / resolución <span class="hint">(opcional, DD/MM/AA)</span></label>
+        <div class="date-input">
+          <input type="text" id="fechaPago" inputmode="numeric" placeholder="DD/MM/AA" maxlength="8" autocomplete="off">
+          <button type="button" class="cal-btn" data-target="fechaPago" aria-label="Abrir calendario">📅</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit">Calcular finiquito</button>
+        <span class="note">Todos los campos se recalculan al instante.</span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" id="resultCard">
+    <div class="card-head">
+      <h2><span class="n">02</span> Desglose del pago</h2>
+      <button type="button" id="btnPdf" class="btn-ghost" disabled>Descargar PDF</button>
+    </div>
+    <div id="results">
+      <p class="empty-state">Completa los datos y presiona «Calcular finiquito» para ver el desglose.</p>
+    </div>
+  </div>
+
+  <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo y las vacaciones se prorratean por días transcurridos desde el último aniversario / desde el 1 de enero, con base de 365 días. La prima de antigüedad (Art. 162 y 486 LFT) usa como base el salario diario real, pero acotado entre una y dos veces el salario mínimo general diario capturado arriba (piso y techo). La indemnización se separa en tres conceptos: Constitucional (fija, 90 días de salario — 120 si se marca recorte de personal, Art. 439 — no depende de la antigüedad); Laboral (Art. 50, que solo se paga en rescisión por el trabajador imputable al patrón —Art. 51/52—, negativa patronal a reinstalar tras laudo, insumisión al arbitraje del patrón, o recorte de personal; no en cualquier despido injustificado), calculada a 20 días por año si el contrato era por tiempo indeterminado (Art. 50-II), o a la mitad del tiempo servido si el contrato determinado duró menos de un año, o a 6 meses del primer año más 20 días por cada año siguiente si duró más (Art. 50-I); y Salarios vencidos/caídos (Art. 48 y 50-III), del salario diario por los días transcurridos entre la fecha de baja y la fecha de pago/resolución capturada, con tope de 12 meses (360 días) — no se calculan los intereses moratorios que pueden proceder si se excede ese plazo. En mutuo acuerdo (y cualquier otra terminación) se puede pactar el pago de Gratificación y/o Prima de Antigüedad aunque la ley no los exija — usa el campo "Gratificación" y el checkbox de prima de antigüedad voluntaria para incluirlos. No sustituye la revisión de contrato colectivo, prestaciones superiores a la ley o condiciones particulares del caso.</p>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+  let resumenRows = [];
+  let resumenDatos = {};
+  let propuestaDias = [30, 45, 60];
+  let propuestaBase = { salarioDiario: 0, finiquitoBase: 0 };
+
+  // Capacidad de descargas del artefacto (puede tardar en resolver o no estar disponible).
+  let downloadsCap = null;
+  if (window.claude && window.claude.use) {
+    window.claude.use('downloads').then((d) => { downloadsCap = d; }).catch(() => {});
+  }
+
+  const fmtNum = (n, d) => n.toLocaleString('es-MX', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  function diasEnMes(year, monthIndex) {
+    return new Date(year, monthIndex + 1, 0).getDate();
+  }
+
+  function diffDias(a, b) {
+    return Math.round((b - a) / 86400000);
+  }
+
+  function antiguedadYMD(start, end) {
+    let y = end.getFullYear() - start.getFullYear();
+    let m = end.getMonth() - start.getMonth();
+    let d = end.getDate() - start.getDate();
+    if (d < 0) {
+      const prevMonthIdx = end.getMonth() === 0 ? 11 : end.getMonth() - 1;
+      const prevMonthYear = end.getMonth() === 0 ? end.getFullYear() - 1 : end.getFullYear();
+      d += diasEnMes(prevMonthYear, prevMonthIdx);
+      m -= 1;
+    }
+    if (m < 0) { m += 12; y -= 1; }
+    return { y, m, d };
+  }
+
+  function diasVacacionesTabla(nAnio) {
+    if (nAnio <= 0) return 0;
+    if (nAnio <= 5) return 10 + 2 * nAnio;
+    const bloque = Math.ceil((nAnio - 5) / 5);
+    return 20 + 2 * bloque;
+  }
+
+  // --- Fechas en formato DD/MM/AA (pivote: 00–30 → 20xx, 31–99 → 19xx) ---
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const DOW = ['D','L','M','M','J','V','S'];
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  function parseFechaDDMMAA(str) {
+    if (!str) return null;
+    const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+    if (!m) return null;
+    const dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), yy = parseInt(m[3], 10);
+    if (mm < 1 || mm > 12) return null;
+    const fullYear = yy <= 30 ? 2000 + yy : 1900 + yy;
+    const d = new Date(fullYear, mm - 1, dd);
+    if (d.getFullYear() !== fullYear || d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function formatFechaDDMMAA(date) {
+    return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${pad2(date.getFullYear() % 100)}`;
+  }
+
+  function attachAutoSlash(input) {
+    input.addEventListener('input', () => {
+      const digits = input.value.replace(/\D/g, '').slice(0, 6);
+      if (digits.length > 4) input.value = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+      else if (digits.length > 2) input.value = digits.slice(0, 2) + '/' + digits.slice(2);
+      else input.value = digits;
+    });
+  }
+  attachAutoSlash($('ingreso'));
+  attachAutoSlash($('baja'));
+  attachAutoSlash($('fechaPago'));
+
+  // --- Calendario desplegable ---
+  let calPopup = null;
+
+  function closeCalendar() {
+    if (calPopup) { calPopup.remove(); calPopup = null; }
+    document.removeEventListener('click', onDocClick);
+  }
+
+  function onDocClick(e) {
+    if (calPopup && !calPopup.contains(e.target) && !e.target.classList.contains('cal-btn')) closeCalendar();
+  }
+
+  function drawCalendar(popup, view, selected, targetInput) {
+    const y = view.getFullYear(), m = view.getMonth();
+    const first = new Date(y, m, 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const yearMin = today.getFullYear() - 70;
+    const yearMax = today.getFullYear() + 1;
+
+    let html = `<div class="cal-head">
+      <button type="button" class="cal-nav-btn" data-nav="-1">‹</button>
+      <select class="cal-month-select">
+        ${MESES.map((mes, i) => `<option value="${i}"${i === m ? ' selected' : ''}>${mes}</option>`).join('')}
+      </select>
+      <select class="cal-year-select">
+        ${Array.from({ length: yearMax - yearMin + 1 }, (_, i) => yearMax - i)
+          .map((yr) => `<option value="${yr}"${yr === y ? ' selected' : ''}>${yr}</option>`).join('')}
+      </select>
+      <button type="button" class="cal-nav-btn" data-nav="1">›</button>
+    </div><div class="cal-grid">`;
+    DOW.forEach(d => html += `<div class="cal-dow">${d}</div>`);
+    for (let i = 0; i < startOffset; i++) html += `<div></div>`;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(y, m, day);
+      const cls = ['cal-day'];
+      if (d.getTime() === today.getTime()) cls.push('today');
+      if (selected && d.getTime() === selected.getTime()) cls.push('selected');
+      html += `<button type="button" class="${cls.join(' ')}" data-day="${day}">${day}</button>`;
+    }
+    html += `</div>`;
+    popup.innerHTML = html;
+
+    popup.querySelector('[data-nav="-1"]').addEventListener('click', () => drawCalendar(popup, new Date(y, m - 1, 1), selected, targetInput));
+    popup.querySelector('[data-nav="1"]').addEventListener('click', () => drawCalendar(popup, new Date(y, m + 1, 1), selected, targetInput));
+    popup.querySelector('.cal-month-select').addEventListener('change', (e) => {
+      drawCalendar(popup, new Date(y, parseInt(e.target.value, 10), 1), selected, targetInput);
+    });
+    popup.querySelector('.cal-year-select').addEventListener('change', (e) => {
+      drawCalendar(popup, new Date(parseInt(e.target.value, 10), m, 1), selected, targetInput);
+    });
+    popup.querySelectorAll('.cal-day').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const chosen = new Date(y, m, parseInt(btn.dataset.day, 10));
+        targetInput.value = formatFechaDDMMAA(chosen);
+        closeCalendar();
+        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  }
+
+  document.querySelectorAll('.cal-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (calPopup) { closeCalendar(); return; }
+      const targetInput = $(btn.dataset.target);
+      const parsed = parseFechaDDMMAA(targetInput.value);
+      const view = parsed ? new Date(parsed) : new Date();
+      calPopup = document.createElement('div');
+      calPopup.className = 'cal-popup';
+      btn.parentElement.appendChild(calPopup);
+      drawCalendar(calPopup, view, parsed, targetInput);
+      setTimeout(() => document.addEventListener('click', onDocClick), 0);
+    });
+  });
+
+  // --- Periodicidad del salario ---
+  const SALARIO_LABELS = {
+    mensual: 'Salario mensual bruto', quincenal: 'Salario quincenal bruto',
+    semanal: 'Salario semanal bruto', diario: 'Salario diario bruto'
+  };
+  $('periodicidad').addEventListener('change', () => {
+    $('salarioLabel').innerHTML = `${SALARIO_LABELS[$('periodicidad').value]} <span class="hint">(MXN)</span>`;
+  });
+
+  // Indemnización Constitucional (Art. 48/50): monto FIJO de 90 días de salario,
+  // no depende de la antigüedad — 120 días si fue recorte de personal (Art. 439, checkbox).
+  // Indemnización Laboral (Art. 50): 20 días por año de servicio, solo en 4 supuestos + recorte.
+  const TIPOS = {
+    renuncia:               { label: 'Renuncia voluntaria',                         indemniza: false, dias20: false, prima: false },
+    mutuo_acuerdo:          { label: 'Mutuo acuerdo',                                indemniza: false, dias20: false, prima: false },
+    termino_contrato:       { label: 'Término de contrato / obra',                   indemniza: false, dias20: false, prima: false },
+    despido_justificado:    { label: 'Despido justificado',                          indemniza: false, dias20: false, prima: true },
+    despido_injustificado:  { label: 'Despido injustificado (Art. 48)',              indemniza: true,  dias20: false, prima: true },
+    rescision_trabajador:   { label: 'Rescisión por el trabajador (Art. 51)',        indemniza: true,  dias20: true,  prima: true },
+    negativa_reinstalacion: { label: 'Negativa patronal a reinstalar (Art. 50-III)', indemniza: true,  dias20: true,  prima: true },
+    insumision_arbitraje:   { label: 'Insumisión al arbitraje',                      indemniza: true,  dias20: true,  prima: true },
+  };
+
+  // Nombre del documento: "Finiquito" solo en separaciones sin despido; el resto, "Liquidación".
+  const TIPOS_FINIQUITO = new Set(['renuncia', 'termino_contrato', 'mutuo_acuerdo']);
+  function nombreTipoDocumento(tipo) {
+    return TIPOS_FINIQUITO.has(tipo) ? 'Finiquito' : 'Liquidación';
+  }
+
+  function calcular() {
+    const nombreTrabajador = $('nombreTrabajador').value.trim();
+    const ingresoVal = $('ingreso').value;
+    const bajaVal = $('baja').value;
+    const salarioIngresado = parseFloat($('salario').value);
+    const periodicidad = $('periodicidad').value;
+    const tipo = $('tipo').value;
+    const diasPendientes = parseFloat($('diasPendientes').value) || 0;
+    const vacacionesPendientesDias = parseFloat($('vacacionesPendientes').value) || 0;
+    const primaVacacionalPendienteDias = parseFloat($('primaVacacionalPendienteDias').value) || 0;
+    const gratificacionDias = parseFloat($('gratificacionDias').value) || 0;
+    const salarioMinimo = parseFloat($('salarioMinimo').value) || 0;
+
+    $('btnPdf').disabled = true;
+
+    if (!ingresoVal || !bajaVal || isNaN(salarioIngresado) || salarioIngresado <= 0) {
+      $('results').innerHTML = '<p class="empty-state">Faltan datos: verifica fechas y salario.</p>';
+      return;
+    }
+
+    const start = parseFechaDDMMAA(ingresoVal);
+    const end = parseFechaDDMMAA(bajaVal);
+    if (!start || !end) {
+      $('results').innerHTML = '<p class="empty-state">Fecha inválida. Usa el formato DD/MM/AA (ej. 07/08/26).</p>';
+      return;
+    }
+    if (end <= start) {
+      $('results').innerHTML = '<p class="empty-state">La fecha de baja debe ser posterior a la fecha de ingreso.</p>';
+      return;
+    }
+
+    const DIVISOR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 };
+    const salarioDiario = salarioIngresado / DIVISOR_PERIODO[periodicidad];
+    const { y: aniosCompletos, m: mesesResto, d: diasResto } = antiguedadYMD(start, end);
+    const totalDiasServicio = diffDias(start, end);
+    const aniosDecimal = totalDiasServicio / 365.25;
+
+    // --- Aniversario más reciente para prorrateo de vacaciones ---
+    let aniversario = new Date(start);
+    aniversario.setFullYear(start.getFullYear() + aniosCompletos);
+    if (aniversario > end) {
+      aniversario.setFullYear(start.getFullYear() + aniosCompletos - 1);
+    }
+    const diasDesdeAniversario = diffDias(aniversario, end);
+    const diasVacAnio = diasVacacionesTabla(aniosCompletos + 1);
+    const vacacionesDias = (diasVacAnio / 365) * diasDesdeAniversario;
+
+    // --- Aguinaldo: desde el 1 de enero (o ingreso, si fue en el mismo año) ---
+    const inicioAnioCal = new Date(end.getFullYear(), 0, 1);
+    const baseAguinaldo = start > inicioAnioCal ? start : inicioAnioCal;
+    const diasEnAnioCal = diffDias(baseAguinaldo, end) + 1;
+    const aguinaldoDias = (15 / 365) * diasEnAnioCal;
+
+    // --- Montos base (finiquito, siempre aplica) ---
+    const salariosPendientes = salarioDiario * diasPendientes;
+    const aguinaldoMonto = salarioDiario * aguinaldoDias;
+    const vacacionesMonto = salarioDiario * vacacionesDias;
+    const primaVacacionalMonto = vacacionesMonto * 0.25;
+    const vacacionesPendientesMonto = salarioDiario * vacacionesPendientesDias;
+    const primaVacacionalPendienteMonto = salarioDiario * primaVacacionalPendienteDias * 0.25;
+    const gratificacionMonto = salarioDiario * gratificacionDias;
+    const subtotalFiniquito = salariosPendientes + aguinaldoMonto + vacacionesMonto + primaVacacionalMonto
+      + vacacionesPendientesMonto + primaVacacionalPendienteMonto + gratificacionMonto;
+
+    const cfg = TIPOS[tipo];
+
+    // --- Prima de antigüedad: 12 días/año, base entre 1x y 2x salario mínimo diario ---
+    const primaAntiguedadVoluntaria = $('primaAntiguedadVoluntaria').checked;
+    const primaAntiguedadPorLey = cfg.prima || aniosCompletos >= 15;
+    const primaAntiguedadAplica = primaAntiguedadPorLey || primaAntiguedadVoluntaria;
+    const salarioBaseTope = Math.max(salarioMinimo, Math.min(salarioDiario, salarioMinimo * 2));
+    const primaAntiguedadMonto = primaAntiguedadAplica ? salarioBaseTope * 12 * aniosDecimal : 0;
+
+    // --- Indemnización Constitucional: fija, 90 días (120 si fue recorte de personal, Art. 439) ---
+    const esRecorte = $('recorteMaquinaria').checked;
+    const diasConstitucional = esRecorte ? 120 : 90;
+    const indemnizacionConstitucional = cfg.indemniza ? salarioDiario * diasConstitucional : 0;
+
+    // --- Indemnización Laboral: Art. 50-I (contrato determinado) o 50-II (indeterminado), solo en los
+    //     4 supuestos del Art. 50/51/52 o recorte de personal ---
+    const contratoTipo = $('contratoTipo').value;
+    const aplicaDias20 = cfg.indemniza && (cfg.dias20 || esRecorte);
+    let indemnizacionLaboral = 0;
+    let laboralDesc = '', laboralFormula = '';
+    if (aplicaDias20) {
+      if (contratoTipo === 'determinado' && totalDiasServicio < 365) {
+        const mitadDias = totalDiasServicio / 2;
+        indemnizacionLaboral = salarioDiario * mitadDias;
+        laboralDesc = 'Laboral — mitad del tiempo servido (Art. 50-I, contrato < 1 año)';
+        laboralFormula = `${fmtNum(salarioDiario,2)} × ${fmtNum(mitadDias,1)} d`;
+      } else if (contratoTipo === 'determinado') {
+        const aniosAdicionales = aniosDecimal - 1;
+        indemnizacionLaboral = salarioDiario * 180 + salarioDiario * 20 * aniosAdicionales;
+        laboralDesc = 'Laboral — 6 meses primer año + 20 días/año siguiente (Art. 50-I)';
+        laboralFormula = `${fmtNum(salarioDiario,2)} × 180 d + ${fmtNum(salarioDiario,2)} × 20 × ${fmtNum(aniosAdicionales,2)} años`;
+      } else {
+        indemnizacionLaboral = salarioDiario * 20 * aniosDecimal;
+        laboralDesc = 'Laboral — 20 días por año de servicio (Art. 50-II)';
+        laboralFormula = `${fmtNum(salarioDiario,2)} × 20 × ${fmtNum(aniosDecimal,2)} años`;
+      }
+    }
+
+    // --- Salarios vencidos/caídos (Art. 48 y 50-III): desde la fecha de baja hasta la fecha de pago, tope 12 meses ---
+    const fechaPagoVal = $('fechaPago').value;
+    const fechaPago = fechaPagoVal ? parseFechaDDMMAA(fechaPagoVal) : null;
+    let diasVencidos = 0, diasVencidosTope = 0, salariosVencidosMonto = 0;
+    if (cfg.indemniza && fechaPago && fechaPago > end) {
+      diasVencidos = diffDias(end, fechaPago);
+      diasVencidosTope = Math.min(diasVencidos, 360);
+      salariosVencidosMonto = salarioDiario * diasVencidosTope;
+    }
+
+    const totalGeneral = subtotalFiniquito + primaAntiguedadMonto + indemnizacionConstitucional + indemnizacionLaboral + salariosVencidosMonto;
+
+    const tipoLabel = cfg.label;
+
+    const tipoDocLabel = nombreTipoDocumento(tipo);
+    const marcaTiempoPantalla = new Date().toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    let html = '';
+
+    html += `<div class="datos-card">
+      <div class="datos-header">
+        <span class="datos-icon">🧮</span>
+        <div>
+          <h3>Datos del cálculo</h3>
+          <p>Cálculo general de ${tipoDocLabel}</p>
+        </div>
+      </div>
+      ${nombreTrabajador ? `<p class="datos-nombre">${nombreTrabajador}</p>` : ''}
+      <div class="datos-grid">
+        <div>
+          <p class="datos-col-label">Información del cálculo</p>
+          <div class="datos-item"><p class="dl">Fecha de cálculo</p><p class="dv">${marcaTiempoPantalla}</p></div>
+          <div class="datos-item"><p class="dl">Tipo de separación</p><p class="dv datos-accent">${tipoLabel}</p></div>
+        </div>
+        <div>
+          <p class="datos-col-label">Información laboral</p>
+          <div class="datos-subgrid">
+            <div class="datos-item"><p class="dl">Fecha de ingreso</p><p class="dv">${ingresoVal}</p></div>
+            <div class="datos-item"><p class="dl">Fecha de separación</p><p class="dv">${bajaVal}</p></div>
+            <div class="datos-item"><p class="dl">Salario diario</p><p class="dv datos-accent datos-strong">${fmt.format(salarioDiario)}</p></div>
+            <div class="datos-item"><p class="dl">Antigüedad</p><p class="dv">${fmtNum(aniosDecimal,2)} años (${totalDiasServicio} días)</p></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    html += `<div class="ledger-group">
+      <p class="ledger-label">Finiquito</p>
+      <div class="line"><span class="desc">Salarios pendientes</span><span class="formula">${fmtNum(salarioDiario,2)} × ${fmtNum(diasPendientes,1)} d</span><span class="amt">${fmt.format(salariosPendientes)}</span></div>
+      <div class="line"><span class="desc">Aguinaldo proporcional</span><span class="formula">${fmtNum(aguinaldoDias,2)} d · desde 1-ene o ingreso</span><span class="amt">${fmt.format(aguinaldoMonto)}</span></div>
+      <div class="line"><span class="desc">Vacaciones proporcionales</span><span class="formula">${fmtNum(vacacionesDias,2)} d · desde aniversario</span><span class="amt">${fmt.format(vacacionesMonto)}</span></div>
+      <div class="line"><span class="desc">Prima vacacional (25%)</span><span class="formula">sobre vacaciones proporcionales</span><span class="amt">${fmt.format(primaVacacionalMonto)}</span></div>
+      ${vacacionesPendientesDias > 0 ? `<div class="line"><span class="desc">Vacaciones pendientes (años anteriores)</span><span class="formula">${fmtNum(salarioDiario,2)} × ${fmtNum(vacacionesPendientesDias,1)} d</span><span class="amt">${fmt.format(vacacionesPendientesMonto)}</span></div>` : ''}
+      ${primaVacacionalPendienteDias > 0 ? `<div class="line"><span class="desc">Prima vacacional pendiente (25%)</span><span class="formula">${fmtNum(salarioDiario,2)} × ${fmtNum(primaVacacionalPendienteDias,1)} d × 25%</span><span class="amt">${fmt.format(primaVacacionalPendienteMonto)}</span></div>` : ''}
+      ${gratificacionDias > 0 ? `<div class="line"><span class="desc">Gratificación</span><span class="formula">${fmtNum(salarioDiario,2)} × ${fmtNum(gratificacionDias,1)} d (no exigida por LFT)</span><span class="amt">${fmt.format(gratificacionMonto)}</span></div>` : ''}
+      <div class="ledger-subtotal"><span>Sub-total finiquito</span><span class="amt">${fmt.format(subtotalFiniquito)}</span></div>
+    </div>`;
+
+    if (primaAntiguedadAplica) {
+      html += `<div class="ledger-group">
+        <p class="ledger-label">Prima de antigüedad${!primaAntiguedadPorLey ? ' (pactada, no obligatoria por ley)' : ''}</p>
+        <div class="line"><span class="desc">Art. 162 LFT${!primaAntiguedadPorLey ? ' — pago voluntario' : ''}</span><span class="formula">base ${fmtNum(salarioBaseTope,2)} (entre ${fmtNum(salarioMinimo,2)} y ${fmtNum(salarioMinimo*2,2)}) × 12 × ${fmtNum(aniosDecimal,2)} años</span><span class="amt">${fmt.format(primaAntiguedadMonto)}</span></div>
+        <div class="ledger-subtotal"><span>Sub-total liquidación</span><span class="amt">${fmt.format(subtotalFiniquito + primaAntiguedadMonto)}</span></div>
+      </div>`;
+    }
+
+    if (cfg.indemniza) {
+      html += `<div class="ledger-group">
+        <p class="ledger-label">Indemnización</p>
+        <div class="line"><span class="desc">Constitucional — ${diasConstitucional} días fijos${esRecorte ? ' (recorte de personal)' : ''}</span><span class="formula">${fmtNum(salarioDiario,2)} × ${diasConstitucional} d</span><span class="amt">${fmt.format(indemnizacionConstitucional)}</span></div>
+        ${aplicaDias20 ? `<div class="line"><span class="desc">${laboralDesc}</span><span class="formula">${laboralFormula}</span><span class="amt">${fmt.format(indemnizacionLaboral)}</span></div>` : ''}
+        ${fechaPago && fechaPago > end
+          ? `<div class="line"><span class="desc">Salarios vencidos${diasVencidos > 360 ? ' (tope 12 meses)' : ''}</span><span class="formula">${fmtNum(salarioDiario,2)} × ${diasVencidosTope} d</span><span class="amt">${fmt.format(salariosVencidosMonto)}</span></div>`
+          : `<div class="line"><span class="desc">Salarios vencidos</span><span class="formula">captura «fecha de pago / resolución» para calcularlos (tope 12 meses)</span><span class="amt">—</span></div>`}
+      </div>`;
+    }
+
+    html += `<div class="total-row"><span class="label">Total a pagar</span><span class="amt">${fmt.format(totalGeneral)}</span></div>`;
+
+    // --- Propuestas de negociación: finiquito (+ prima de antigüedad si aplica) + N días de gratificación,
+    //     en vez de indemnización — para ofertas de mutuo acuerdo. Los días son editables. ---
+    // En negociación (mutuo acuerdo), la prima de antigüedad solo entra si hay 15+ años de
+    // servicio (Art. 162 LFT, separación voluntaria) — no por las demás causales del cálculo
+    // principal (despido, rescisión, etc.), que no aplican en un escenario de negociación.
+    const propuestaPrimaAntiguedadAplica = aniosCompletos >= 15;
+    propuestaBase = {
+      salarioDiario,
+      finiquitoBase: subtotalFiniquito + (propuestaPrimaAntiguedadAplica ? primaAntiguedadMonto : 0),
+      primaAntiguedadAplica: propuestaPrimaAntiguedadAplica,
+    };
+    html += `<div class="propuestas-card">
+      <p class="ledger-label">Propuestas de negociación</p>
+      <p class="propuestas-nota">Finiquito${primaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación, en lugar de indemnización.</p>
+      ${propuestaDias.map((d, i) => `
+        <div class="propuesta-row">
+          <span class="propuesta-label">Propuesta ${i + 1}: Finiquito + <input type="number" class="propuesta-dias" data-idx="${i}" value="${d}" min="0" step="1"> días</span>
+          <span class="propuesta-amt" data-idx="${i}">${fmt.format(propuestaBase.finiquitoBase + propuestaBase.salarioDiario * d)}</span>
+        </div>`).join('')}
+    </div>`;
+
+    html += `<p class="elaborado">Elaborado por Donceles Abogados</p>`;
+    html += `<p class="contacto">Cel: 33 1836 4295 · Domicilio: Donceles 2298A, Jardines del Country, 44210 Guadalajara, Jal.</p>`;
+
+    $('results').innerHTML = html;
+    $('btnPdf').disabled = false;
+
+    // --- Datos del cálculo: bloque aparte (se dibuja con su propio layout en el PDF) ---
+    resumenDatos = {
+      nombreTrabajador,
+      fechaCalculo: marcaTiempoPantalla,
+      tipoSeparacion: tipoLabel,
+      fechaIngreso: ingresoVal,
+      fechaSeparacion: bajaVal,
+      salarioDiario: fmt.format(salarioDiario),
+      antiguedad: `${fmtNum(aniosDecimal,2)} años (${totalDiasServicio} días)`,
+      tipoDocLabel,
+    };
+
+    // --- Filas estructuradas: alimentan tanto el PDF como el resumen en texto plano ---
+    const rows = [];
+    rows.push(
+      { type: 'section', text: 'Finiquito' },
+      { type: 'line', label: `Salarios pendientes (${fmtNum(diasPendientes,1)} d)`, amt: fmt.format(salariosPendientes) },
+      { type: 'line', label: `Aguinaldo proporcional (${fmtNum(aguinaldoDias,2)} d)`, amt: fmt.format(aguinaldoMonto) },
+      { type: 'line', label: `Vacaciones proporcionales (${fmtNum(vacacionesDias,2)} d)`, amt: fmt.format(vacacionesMonto) },
+      { type: 'line', label: `Prima vacacional 25%`, amt: fmt.format(primaVacacionalMonto) },
+    );
+    if (vacacionesPendientesDias > 0) {
+      rows.push({ type: 'line', label: `Vacaciones pendientes (${fmtNum(vacacionesPendientesDias,1)} d)`, amt: fmt.format(vacacionesPendientesMonto) });
+    }
+    if (primaVacacionalPendienteDias > 0) {
+      rows.push({ type: 'line', label: `Prima vacacional pendiente (${fmtNum(primaVacacionalPendienteDias,1)} d × 25%)`, amt: fmt.format(primaVacacionalPendienteMonto) });
+    }
+    if (gratificacionDias > 0) {
+      rows.push({ type: 'line', label: `Gratificación (${fmtNum(gratificacionDias,1)} d)`, amt: fmt.format(gratificacionMonto) });
+    }
+    rows.push({ type: 'subtotal', label: 'Sub-total finiquito', amt: fmt.format(subtotalFiniquito) });
+    if (primaAntiguedadAplica) {
+      rows.push({ type: 'section', text: `Prima de antigüedad${!primaAntiguedadPorLey ? ' (pactada, no obligatoria por ley)' : ''}` });
+      rows.push({ type: 'line', label: 'Art. 162 LFT', amt: fmt.format(primaAntiguedadMonto) });
+      rows.push({ type: 'subtotal', label: 'Sub-total liquidación', amt: fmt.format(subtotalFiniquito + primaAntiguedadMonto) });
+    }
+    if (cfg.indemniza) {
+      rows.push({ type: 'section', text: 'Indemnización' });
+      rows.push({ type: 'line', label: `Constitucional (${diasConstitucional} días${esRecorte ? ', recorte de personal' : ''})`, amt: fmt.format(indemnizacionConstitucional) });
+      if (aplicaDias20) rows.push({ type: 'line', label: laboralDesc, amt: fmt.format(indemnizacionLaboral) });
+      if (fechaPago && fechaPago > end) rows.push({ type: 'line', label: `Salarios vencidos (${diasVencidosTope} d)`, amt: fmt.format(salariosVencidosMonto) });
+    }
+    rows.push({ type: 'total', label: 'Total a pagar', amt: fmt.format(totalGeneral) });
+    resumenRows = rows;
+  }
+
+  $('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    calcular();
+  });
+
+  // Construye el PDF real con jsPDF (cargado desde cdnjs) y arma el Blob.
+  function construirPdfDoc() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const marginX = 48;
+    const rightX = 564;
+    const topY = 40;
+    const bottomMargin = 18;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const availableHeight = pageHeight - topY - bottomMargin;
+
+    const nombreDoc = $('nombreTrabajador').value.trim();
+    const tipoDoc = nombreTipoDocumento($('tipo').value);
+    doc.setProperties({
+      title: nombreDoc ? `${nombreDoc} - Cálculo de ${tipoDoc}` : `Cálculo de ${tipoDoc}`,
+      author: 'Donceles Abogados',
+      subject: `Cálculo de ${tipoDoc}`,
+    });
+
+    // Justificado manual: reparte el espacio extra entre palabras para que cada línea
+    // (salvo la última) llene exactamente el ancho disponible — no depende del soporte
+    // de "align: justify" de jsPDF, que en la práctica no estaba estirando las líneas.
+    function justifyLine(text, x, yy, maxWidth) {
+      const words = text.split(' ').filter(Boolean);
+      if (words.length <= 1) { doc.text(text, x, yy); return; }
+      const wordsWidth = words.reduce((sum, w) => sum + doc.getTextWidth(w), 0);
+      const gap = (maxWidth - wordsWidth) / (words.length - 1);
+      let cx = x;
+      words.forEach((w) => {
+        doc.text(w, cx, yy);
+        cx += doc.getTextWidth(w) + gap;
+      });
+    }
+
+    // Dibuja todo el documento a una escala dada. draw=false solo mide (no pinta nada),
+    // para calcular de antemano qué tan chico debe ir el contenido para caber en una página.
+    function renderPass(scale, draw) {
+      const s = (v) => v * scale;
+      let y = topY;
+
+      if (draw) {
+        try {
+          const logoSrc = document.querySelector('.brand-logo').src;
+          const logoW = s(110), logoH = logoW * (194 / 909);
+          doc.addImage(logoSrc, 'PNG', marginX, y, logoW, logoH);
+          y += logoH + s(18);
+        } catch (e) { y += s(10); }
+      } else {
+        y += s(110) * (194 / 909) + s(18);
+      }
+
+      if (draw) {
+        doc.setFont('times', 'bold');
+        doc.setFontSize(s(18));
+        doc.setTextColor(0, 32, 64);
+        doc.text('Calculadora de Finiquito', marginX, y);
+      }
+      y += s(16);
+      const marcaTiempo = new Date().toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      if (draw) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(s(9));
+        doc.setTextColor(60, 81, 112);
+        doc.text(`Donceles Abogados · Referencia de cálculo · Generado el ${marcaTiempo}`, marginX, y);
+      }
+      y += s(14);
+      if (draw) {
+        doc.setDrawColor(0, 32, 64);
+        doc.setLineWidth(1.2);
+        doc.line(marginX, y, rightX, y);
+      }
+      y += s(22);
+
+      // --- Datos del cálculo (mismo formato que el CCL) ---
+      function drawLabelValue(x, yy, label, value, accentRGB) {
+        if (!draw) return;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(s(8));
+        doc.setTextColor(0, 32, 64);
+        doc.text(label, x, yy);
+        doc.setFont('helvetica', accentRGB ? 'bold' : 'normal');
+        doc.setFontSize(s(10.5));
+        if (accentRGB) doc.setTextColor(accentRGB[0], accentRGB[1], accentRGB[2]);
+        else doc.setTextColor(30, 40, 60);
+        doc.text(value, x, yy + s(13));
+      }
+
+      if (draw) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(s(11));
+        doc.setTextColor(0, 32, 64);
+        doc.text('Datos del cálculo', marginX, y);
+      }
+      y += s(13);
+      if (draw) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(s(8.5));
+        doc.setTextColor(116, 131, 154);
+        doc.text(`Cálculo general de ${resumenDatos.tipoDocLabel}`, marginX, y);
+      }
+      y += s(12);
+      if (draw) {
+        doc.setDrawColor(222, 214, 196);
+        doc.setLineWidth(0.7);
+        doc.line(marginX, y, rightX, y);
+      }
+      y += s(16);
+
+      if (resumenDatos.nombreTrabajador) {
+        if (draw) {
+          doc.setFont('times', 'bold');
+          doc.setFontSize(s(12));
+          doc.setTextColor(0, 32, 64);
+          doc.text(resumenDatos.nombreTrabajador, marginX, y);
+        }
+        y += s(18);
+      }
+
+      const col1X = marginX;
+      const col2X = marginX + 200;
+      const col2SubGap = 150;
+      const goldAccent = [156, 122, 72];
+
+      if (draw) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(s(8));
+        doc.setTextColor(116, 131, 154);
+        doc.text('INFORMACIÓN DEL CÁLCULO', col1X, y);
+        doc.text('INFORMACIÓN LABORAL', col2X, y);
+      }
+      y += s(16);
+
+      const datosRowY1 = y;
+      drawLabelValue(col1X, datosRowY1, 'Fecha de cálculo', resumenDatos.fechaCalculo);
+      drawLabelValue(col2X, datosRowY1, 'Fecha de ingreso', resumenDatos.fechaIngreso);
+      drawLabelValue(col2X + col2SubGap, datosRowY1, 'Fecha de separación', resumenDatos.fechaSeparacion);
+
+      const datosRowY2 = datosRowY1 + s(30);
+      drawLabelValue(col1X, datosRowY2, 'Tipo de separación', resumenDatos.tipoSeparacion, goldAccent);
+      drawLabelValue(col2X, datosRowY2, 'Salario diario', resumenDatos.salarioDiario, goldAccent);
+      drawLabelValue(col2X + col2SubGap, datosRowY2, 'Antigüedad', resumenDatos.antiguedad);
+
+      y = datosRowY2 + s(26);
+      if (draw) {
+        doc.setDrawColor(0, 32, 64);
+        doc.setLineWidth(1);
+        doc.line(marginX, y, rightX, y);
+      }
+      y += s(20);
+
+      resumenRows.forEach((row) => {
+        if (row.type === 'section') {
+          y += s(6);
+          if (draw) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(s(10.5));
+            doc.setTextColor(156, 122, 72);
+            doc.text(row.text.toUpperCase(), marginX, y);
+          }
+          y += s(14);
+        } else if (row.type === 'line') {
+          if (draw) {
+            doc.setFillColor(192, 152, 104);
+            doc.lines([[s(2.4), s(2.4)], [-s(2.4), s(2.4)], [-s(2.4), -s(2.4)]], marginX, y - s(6.4), [1, 1], 'F', true);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(s(10));
+            doc.setTextColor(0, 32, 64);
+            doc.text(row.label, marginX + 10, y);
+            doc.text(row.amt, rightX, y, { align: 'right' });
+          }
+          y += s(15);
+        } else if (row.type === 'subtotal') {
+          y += s(4);
+          if (draw) {
+            doc.setDrawColor(210, 210, 200);
+            doc.setLineWidth(0.5);
+            doc.line(marginX, y, rightX, y);
+          }
+          y += s(12);
+          if (draw) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(s(9.5));
+            doc.setTextColor(0, 32, 64);
+            doc.text(row.label.toUpperCase(), marginX, y);
+            doc.text(row.amt, rightX, y, { align: 'right' });
+          }
+          y += s(16);
+        } else if (row.type === 'total') {
+          y += s(8);
+          if (draw) {
+            doc.setDrawColor(210, 210, 200);
+            doc.setLineWidth(0.7);
+            doc.line(marginX, y, rightX, y);
+          }
+          y += s(18);
+          if (draw) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(s(13));
+            doc.text(row.label, marginX, y);
+            doc.text(row.amt, rightX, y, { align: 'right' });
+          }
+          y += s(15);
+        }
+      });
+
+      // --- Propuestas de negociación ---
+      y += s(10);
+      if (draw) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(s(10.5));
+        doc.setTextColor(0, 32, 64);
+        doc.text('PROPUESTAS DE NEGOCIACIÓN', marginX, y);
+      }
+      y += s(12);
+      if (draw) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(s(8));
+        doc.setTextColor(116, 131, 154);
+        doc.text(`Finiquito${propuestaBase.primaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación, en lugar de indemnización.`, marginX, y);
+      }
+      y += s(16);
+      propuestaDias.forEach((d, i) => {
+        if (draw) {
+          const montoProp = propuestaBase.finiquitoBase + propuestaBase.salarioDiario * d;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(s(10));
+          doc.setTextColor(0, 32, 64);
+          doc.text(`Propuesta ${i + 1}: Finiquito + ${d} días`, marginX + 8, y);
+          doc.setFont('helvetica', 'bold');
+          doc.text(fmt.format(montoProp), rightX, y, { align: 'right' });
+        }
+        y += s(16);
+      });
+
+      // --- Pie de página: "Elaborado por..." + contacto + disclaimer justificado ---
+      const contentWidth = rightX - marginX;
+      const elaboradoGap = s(13);
+      const contactoGap = s(16);
+      const discLineHeight = s(7.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(s(6));
+      const disclaimerEl = document.querySelector('.disclaimer');
+      const disclaimerLines = disclaimerEl ? doc.splitTextToSize(disclaimerEl.textContent.trim(), contentWidth) : [];
+      const footerHeight = elaboradoGap + contactoGap + disclaimerLines.length * discLineHeight;
+
+      // Ancla el pie al fondo de la página cuando el contenido es corto; si no cabe así,
+      // lo continúa justo después del contenido (nunca agrega una segunda página).
+      let fy = Math.max(y, pageHeight - bottomMargin - footerHeight);
+
+      if (draw) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(s(9));
+        doc.setTextColor(116, 131, 154);
+        doc.text('Elaborado por Donceles Abogados', (marginX + rightX) / 2, fy, { align: 'center' });
+      }
+      fy += elaboradoGap;
+
+      if (draw) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(s(7.5));
+        doc.setTextColor(116, 131, 154);
+        doc.text('Cel: 33 1836 4295 · Domicilio: Donceles 2298A, Jardines del Country, 44210 Guadalajara, Jal.', (marginX + rightX) / 2, fy, { align: 'center' });
+      }
+      fy += contactoGap;
+
+      if (draw) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(s(6));
+        doc.setTextColor(140, 145, 160);
+        disclaimerLines.forEach((line, i) => {
+          const isLast = i === disclaimerLines.length - 1;
+          if (isLast) doc.text(line, marginX, fy);
+          else justifyLine(line, marginX, fy, contentWidth);
+          fy += discLineHeight;
+        });
+      } else {
+        fy += disclaimerLines.length * discLineHeight;
+      }
+
+      return fy - topY;
+    }
+
+    // Pase 1: mide a tamaño completo. Pase 2: dibuja a la escala que garantiza una sola página.
+    const naturalHeight = renderPass(1, false);
+    const scale = Math.min(1, availableHeight / naturalHeight);
+    renderPass(scale, true);
+
+    return doc;
+  }
+
+  function construirPdfBlob() {
+    return construirPdfDoc().output('blob');
+  }
+
+  function resumenComoTexto() {
+    const datosLineas = [];
+    if (resumenDatos.nombreTrabajador) datosLineas.push(resumenDatos.nombreTrabajador);
+    datosLineas.push(
+      `Fecha de cálculo: ${resumenDatos.fechaCalculo}`,
+      `Tipo de separación: ${resumenDatos.tipoSeparacion}`,
+      `Fecha de ingreso: ${resumenDatos.fechaIngreso}   Fecha de separación: ${resumenDatos.fechaSeparacion}`,
+      `Salario diario: ${resumenDatos.salarioDiario}   Antigüedad: ${resumenDatos.antiguedad}`,
+    );
+    const detalle = resumenRows.map((row) => {
+      if (row.type === 'section') return `\n${row.text.toUpperCase()}`;
+      if (row.type === 'subtotal') return `  ${row.label.toUpperCase()}: ${row.amt}`;
+      if (row.type === 'total') return `\nTOTAL A PAGAR: ${row.amt}`;
+      return `  ${row.label}: ${row.amt}`;
+    });
+    const propuestas = [
+      '',
+      'PROPUESTAS DE NEGOCIACIÓN',
+      ...propuestaDias.map((d, i) => `  Propuesta ${i + 1}: Finiquito + ${d} días: ${fmt.format(propuestaBase.finiquitoBase + propuestaBase.salarioDiario * d)}`),
+    ];
+    return datosLineas.concat(detalle, propuestas).join('\n');
+  }
+
+  // La página no puede iniciar descargas por su cuenta dentro del artefacto —
+  // por eso se usa la capacidad "downloads" del visor, que muestra al usuario
+  // una confirmación real antes de guardar el archivo.
+  $('btnPdf').addEventListener('click', async () => {
+    const original = $('btnPdf').textContent;
+    const nombreCrudo = $('nombreTrabajador').value.trim().replace(/[\\/:*?"<>|]/g, '');
+    const tipoDocArchivo = nombreTipoDocumento($('tipo').value);
+    const fechaArchivo = $('baja').value.replace(/\//g, '-');
+    const filename = nombreCrudo
+      ? `${nombreCrudo}-Cálculo de ${tipoDocArchivo}.pdf`
+      : `Cálculo de ${tipoDocArchivo}-${fechaArchivo}.pdf`;
+
+    // Fuera de Claude (sitio propio) no hay sandbox que bloquee descargas: se usa el
+    // guardado nativo de jsPDF directo, sin pasar por la capacidad "downloads" de Claude.
+    const enClaudeArtifact = !!(window.claude && window.claude.use);
+    if (!enClaudeArtifact && window.jspdf) {
+      try {
+        construirPdfDoc().save(filename);
+        $('btnPdf').textContent = 'Descargado';
+      } catch (err) {
+        $('btnPdf').textContent = 'No disponible';
+      }
+      setTimeout(() => { $('btnPdf').textContent = original; }, 1800);
+      return;
+    }
+
+    if (downloadsCap && window.jspdf) {
+      try {
+        await downloadsCap.save({ filename, data: construirPdfBlob() });
+        $('btnPdf').textContent = 'Descargado';
+        setTimeout(() => { $('btnPdf').textContent = original; }, 1800);
+        return;
+      } catch (err) {
+        if (err && err.code === 'declined') {
+          $('btnPdf').textContent = 'Cancelado';
+          setTimeout(() => { $('btnPdf').textContent = original; }, 1800);
+          return;
+        }
+        // cualquier otro error: cae al respaldo de copiar texto
+      }
+    }
+
+    try {
+      const texto = resumenComoTexto();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(texto);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      $('btnPdf').textContent = 'Copiado (texto)';
+    } catch (err) {
+      $('btnPdf').textContent = 'No disponible';
+    }
+    setTimeout(() => { $('btnPdf').textContent = original; }, 1800);
+  });
+
+  // Recalcular en vivo tras el primer cálculo
+  $('f').addEventListener('input', function () {
+    if ($('results').querySelector('.total-row')) calcular();
+  });
+
+  // Editar los días de una propuesta solo actualiza esa fila, sin recalcular todo el formulario.
+  $('results').addEventListener('input', function (e) {
+    if (!e.target.classList.contains('propuesta-dias')) return;
+    const idx = parseInt(e.target.dataset.idx, 10);
+    const dias = parseFloat(e.target.value) || 0;
+    propuestaDias[idx] = dias;
+    const amtEl = $('results').querySelector(`.propuesta-amt[data-idx="${idx}"]`);
+    if (amtEl) amtEl.textContent = fmt.format(propuestaBase.finiquitoBase + propuestaBase.salarioDiario * dias);
+  });
+
+  // --- PWA: ícono e instalación en pantalla de inicio ---
+  const ICON_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%2316213a'/%3E%3Ctext x='256' y='344' font-family='Georgia,Palatino,serif' font-size='300' font-weight='700' fill='%23e8c179' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E";
+
+  const MANIFEST = {
+    name: 'Calculadora de Finiquito',
+    short_name: 'Finiquito',
+    description: 'Calculadora de finiquito, indemnización y prima de antigüedad conforme a la LFT.',
+    start_url: location.href,
+    scope: location.href,
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#eef0ea',
+    theme_color: '#16213a',
+    icons: [
+      { src: ICON_SVG, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+      { src: ICON_SVG, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+    ],
+  };
+
+  $('appleTouchIcon').href = ICON_SVG;
+  $('manifestLink').href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(MANIFEST));
+})();
+</script>
