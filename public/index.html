@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
 <title>Calculadora de Finiquito</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16213a">
@@ -5,8 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Finiquito">
-<link rel="apple-touch-icon" id="appleTouchIcon">
-<link rel="manifest" id="manifestLink">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <style>
   :root {
     --ink: #002040;
@@ -446,6 +451,8 @@
   }
 </style>
 
+</head>
+<body>
 <div class="page">
 
   <div class="masthead">
@@ -1429,7 +1436,16 @@
     ],
   };
 
-  $('appleTouchIcon').href = ICON_SVG;
-  $('manifestLink').href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(MANIFEST));
+  // --- PWA: app instalable (manifest y service worker servidos por el sitio) ---
+  // Dentro de un artefacto de Claude no hay service worker; ahí solo se ignora.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+      });
+    }
+  }
 })();
 </script>
+</body>
+</html>

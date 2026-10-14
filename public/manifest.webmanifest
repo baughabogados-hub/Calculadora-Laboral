@@ -1,0 +1,18 @@
+{
+  "name": "Calculadora de Finiquito — Consultores Donceles",
+  "short_name": "Finiquito",
+  "description": "Calculadora de finiquito, liquidación, indemnización y prima de antigüedad conforme a la Ley Federal del Trabajo.",
+  "lang": "es-MX",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2ede2",
+  "theme_color": "#16213a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
