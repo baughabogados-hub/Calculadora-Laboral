@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acceso · Calculadora de Finiquito Baugh</title>
+<meta name="theme-color" content="#111111">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="/baugh/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/baugh/icons/apple-touch-icon.png">
+<link rel="icon" href="/baugh/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+  :root {
+    --ink: #111111; --ink-soft: #3a3a3a; --ink-faint: #767676;
+    --paper: #f5f5f3; --paper-raised: #ffffff; --line: #dadad6; --chip: #efefec;
+    --danger: #9b2c22; --focus: #5a5a5a; --logo-filter: none;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #f2f2f0; --ink-soft: #c8c8c4; --ink-faint: #8e8e8a;
+      --paper: #0f0f0f; --paper-raised: #191919; --line: #333331; --chip: #232322;
+      --danger: #e08a7e; --focus: #bdbdbd; --logo-filter: invert(1);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Lora", Georgia, "Times New Roman", serif;
+    display: grid; place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    min-height: 100vh;
+  }
+  .wrap { width: 100%; max-width: 440px; }
+  main {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px;
+    padding: 30px 26px 26px;
+  }
+  .logo { display: block; height: 52px; width: auto; margin: 0 0 26px; filter: var(--logo-filter); }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; text-wrap: balance; }
+  .sub { margin: 0 0 22px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.5; }
+  .label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft); margin: 0 0 8px; }
+  input {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 11px 12px;
+  }
+  input.pin { letter-spacing: 0.4em; font-variant-numeric: tabular-nums; text-align: center; font-size: 20px; }
+  input:focus, button:focus-visible, a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .btn {
+    margin-top: 14px; width: 100%; font: inherit; font-weight: 700; font-size: 15px;
+    color: var(--paper-raised); background: var(--ink); border: 0; border-radius: 7px; padding: 12px 18px; cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.5; cursor: progress; }
+  .link { background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: var(--ink-soft); text-decoration: underline; cursor: pointer; }
+  .error { color: var(--danger); font-size: 14px; margin: 0 0 16px; }
+  .usuarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+  .usuario {
+    display: flex; align-items: center; gap: 10px; min-width: 0;
+    font: inherit; font-size: 14px; color: var(--ink); text-align: left;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; cursor: pointer;
+  }
+  .usuario span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usuario:hover { border-color: var(--ink-faint); }
+  .avatar {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff;
+    font-family: Arial, sans-serif;
+  }
+  .elegido { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; padding: 10px 12px; background: var(--chip); border-radius: 8px; }
+  .elegido .quien { display: flex; align-items: center; gap: 10px; font-weight: 600; min-width: 0; }
+  .nota { font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 0; line-height: 1.45; }
+  .cargando, .vacio { font-size: 14px; color: var(--ink-faint); margin: 4px 0; }
+  .sep { margin: 24px 0 18px; border: 0; border-top: 1px solid var(--line); }
+  details summary { cursor: pointer; font-size: 14px; color: var(--ink-soft); }
+  details[open] summary { margin-bottom: 12px; }
+  [hidden] { display: none !important; }
+  footer { margin-top: 18px; text-align: center; font-size: 11.5px; color: var(--ink-faint); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<main>
+  <img class="logo" src="/baugh/icons/logo-baugh.png" alt="Baugh Abogados">
+  <h1>Calculadora de Finiquito</h1>
+  <p class="sub">Herramienta interna del equipo de Baugh Abogados.</p>
+  {{ERROR}}
+  <p class="error" id="msg" role="alert" hidden></p>
+
+  <section id="castillo" {{CASTILLO}}>
+    <div id="paso1">
+      <span class="label">¿Quién eres?</span>
+      <p class="cargando" id="cargando">Cargando usuarios de El Castillo…</p>
+      <p class="vacio" id="vacio" hidden></p>
+      <div class="usuarios" id="usuarios"></div>
+    </div>
+
+    <form id="paso2" hidden>
+      <div class="elegido">
+        <span class="quien" id="quien"></span>
+        <button type="button" class="link" id="cambiar">Cambiar</button>
+      </div>
+      <label class="label" for="pin" id="pinLabel">Tu PIN de El Castillo</label>
+      <input class="pin" type="password" id="pin" inputmode="numeric" pattern="\d{2,4}" maxlength="4" minlength="2" autocomplete="off" required>
+      <p class="nota" id="pinNota" hidden>Todavía no tienes PIN. Crea uno de 2 a 4 dígitos; te servirá también en las demás apps del despacho que lo pidan.</p>
+      <button class="btn" type="submit" id="entrar">Entrar</button>
+    </form>
+  </section>
+
+  <hr class="sep" {{CASTILLO}}>
+
+  <details id="conPassword" {{PASSWORD_FORM}}>
+    <summary>Entrar con la contraseña del equipo</summary>
+    <form method="post" action="/baugh/login">
+      <label class="label" for="password">Contraseña del equipo</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+  </details>
+</main>
+<footer>Tel: 33 1329 4195 · baugh.abogados@gmail.com</footer>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const msg = $('msg');
+  let elegido = null;
+
+  function aviso(texto) { msg.textContent = texto || ''; msg.hidden = !texto; }
+  function esc(s) { return String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function avatar(u) {
+    const color = /^#[0-9a-f]{3,8}$/i.test(u.color || '') ? u.color : '#555';
+    return `<span class="avatar" style="background:${color}">${esc(u.iniciales || '?')}</span>`;
+  }
+
+  if ($('castillo').hidden) { $('conPassword').open = true; return; }
+
+  fetch('/baugh/api/usuarios', { headers: { Accept: 'application/json' } })
+    .then((r) => r.ok ? r.json() : Promise.reject(r))
+    .then((usuarios) => {
+      $('cargando').hidden = true;
+      if (!usuarios.length) {
+        $('vacio').textContent = 'No hay usuarios activos en El Castillo.';
+        $('vacio').hidden = false;
+        return;
+      }
+      $('usuarios').innerHTML = usuarios.map((u, i) =>
+        `<button type="button" class="usuario" data-i="${i}">${avatar(u)}<span>${esc(u.nombre_completo)}</span></button>`).join('');
+      $('usuarios').addEventListener('click', (e) => {
+        const b = e.target.closest('.usuario');
+        if (!b) return;
+        elegido = usuarios[Number(b.dataset.i)];
+        $('quien').innerHTML = `${avatar(elegido)}<span>${esc(elegido.nombre_completo)}</span>`;
+        $('pinLabel').textContent = elegido.tiene_pin ? 'Tu PIN de El Castillo' : 'Crea tu PIN';
+        $('pinNota').hidden = !!elegido.tiene_pin;
+        $('entrar').textContent = elegido.tiene_pin ? 'Entrar' : 'Crear PIN y entrar';
+        $('paso1').hidden = true; $('paso2').hidden = false; aviso('');
+        $('pin').value = ''; $('pin').focus();
+      });
+    })
+    .catch(() => {
+      $('cargando').hidden = true;
+      $('vacio').textContent = 'No se pudo conectar con El Castillo. Usa la contraseña del equipo.';
+      $('vacio').hidden = false;
+      $('conPassword').open = true;
+    });
+
+  $('cambiar').addEventListener('click', () => {
+    elegido = null; $('paso2').hidden = true; $('paso1').hidden = false; aviso('');
+  });
+
+  $('paso2').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!elegido) return;
+    const pin = $('pin').value.trim();
+    if (!/^\d{2,4}$/.test(pin)) { aviso('El PIN es de 2 a 4 dígitos.'); return; }
+    $('entrar').disabled = true; aviso('');
+    try {
+      const r = await fetch('/baugh/api/entrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ usuario_id: elegido.id, pin, crear: !elegido.tiene_pin, nombre: elegido.nombre_completo }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) { location.replace('/baugh/'); return; }
+      if (r.status === 409) { elegido.tiene_pin = true; $('pinLabel').textContent = 'Tu PIN de El Castillo'; $('pinNota').hidden = true; $('entrar').textContent = 'Entrar'; }
+      aviso(data.error || 'No se pudo entrar.');
+      $('pin').value = ''; $('pin').focus();
+    } catch (err) {
+      aviso('Sin conexión. Intenta de nuevo.');
+    } finally {
+      $('entrar').disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
