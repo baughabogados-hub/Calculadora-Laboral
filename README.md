@@ -12,7 +12,7 @@ Las dos se instalan como app en el celular (PWA) y abren sin internet una vez vi
 ## Estructura
 
 ```
-server.js                 servidor Express (rutas, sesión, contraseña, SSO de El Castillo)
+server.js                 servidor Express (rutas, sesión, acceso con El Castillo y contraseña)
 public/                   calculadora pública de Donceles + manifest, service worker e íconos
 private/baugh/            calculadora de Baugh + manifest, service worker e íconos
 views/login.html          pantalla de acceso de Baugh
@@ -26,72 +26,38 @@ views/login.html          pantalla de acceso de Baugh
 
 | Variable | Valor |
 |---|---|
-| `SESSION_SECRET` | Cadena aleatoria de 32+ caracteres. Obligatoria: sin ella `/baugh/` queda cerrada. |
-| `BAUGH_PASSWORD` | Contraseña del equipo. Si la dejas vacía, solo se entra desde El Castillo. |
-| `CASTILLO_SSO_SECRET` | Secreto compartido con El Castillo (el mismo valor en ambos servicios). |
+| `SESSION_SECRET` | Cadena aleatoria de 32+ caracteres, propia de esta app. Obligatoria: sin ella `/baugh/` queda cerrada. |
+| `CASTILLO_URL` | URL pública de El Castillo, p. ej. `https://el-castillo-production.up.railway.app` |
+| `CASTILLO_API_KEY` | La misma `CASTILLO_API_KEY` que usan El Castillo y las demás apps. |
+| `BAUGH_PASSWORD` | Opcional. Contraseña del equipo como respaldo. Si la dejas vacía, solo se entra con El Castillo. |
 | `SESSION_HOURS` | Opcional. Horas que dura la sesión (12 por defecto). |
+| `CASTILLO_APP_KEY` | Opcional. Clave de la app en El Castillo (`calculadora` por defecto). |
 
-Para generar secretos: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+Para generar un secreto: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
 4. Settings → Networking → Generate Domain (o conecta un dominio propio).
 5. Healthcheck: `/healthz`.
 
 Para cambiar la contraseña del equipo basta con cambiar `BAUGH_PASSWORD` en Railway. Para cerrar todas las sesiones abiertas, cambia `SESSION_SECRET`.
 
-## Entrada desde El Castillo (inicio de sesión único)
+## Acceso con El Castillo
 
-El Castillo genera un token firmado y redirige al usuario a:
+Sigue el mismo esquema que las demás apps del despacho:
 
-```
-https://<dominio-calculadora>/baugh/sso?token=<JWT>
-```
+1. La pantalla de acceso muestra los usuarios activos de El Castillo (`/api/usuarios-selector`).
+2. La persona elige su nombre y escribe su PIN. Si no tiene, lo crea ahí mismo (`/api/pin/crear`); si ya tiene, se verifica (`/api/pin/verificar`).
+3. Antes de aceptar el PIN, la calculadora consulta `/api/permiso?app=calculadora`. Si el nivel es `ninguno`, no entra.
+4. Con la sesión abierta, el permiso se vuelve a consultar cada 5 minutos: si se lo quitas en El Castillo, la persona sale al recargar.
 
-Requisitos del token (JWT HS256 firmado con `CASTILLO_SSO_SECRET`):
+Cinco intentos fallidos bloquean 15 minutos, por dispositivo y por usuario.
 
-| Campo | Valor |
-|---|---|
-| `iss` | `"el-castillo"` |
-| `aud` | `"calculadora-baugh"` |
-| `sub` | id del usuario en El Castillo |
-| `name` | nombre del usuario (opcional) |
-| `iat` / `exp` | vigencia máxima de 5 minutos |
-| `jti` | id único del token (evita reutilizarlo) |
-
-El Castillo solo debe emitir el token si el usuario tiene el permiso de la calculadora en su matriz de permisos.
-
-Ejemplo para El Castillo en Node (sin dependencias):
-
-```js
-const crypto = require('crypto');
-
-function enlaceCalculadoraBaugh(usuario) {
-  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  const now = Math.floor(Date.now() / 1000);
-  const header = b64({ alg: 'HS256', typ: 'JWT' });
-  const payload = b64({
-    iss: 'el-castillo',
-    aud: 'calculadora-baugh',
-    sub: String(usuario.id),
-    name: usuario.nombre,
-    iat: now,
-    exp: now + 120,
-    jti: crypto.randomUUID(),
-  });
-  const firma = crypto.createHmac('sha256', process.env.CASTILLO_SSO_SECRET)
-    .update(`${header}.${payload}`).digest('base64url');
-  return `${process.env.CALCULADORA_URL}/baugh/sso?token=${header}.${payload}.${firma}`;
-}
-
-// Ruta en El Castillo, protegida por su propia sesión y permisos:
-// app.get('/apps/calculadora', requireAuth, requirePermiso('calculadora'), (req, res) =>
-//   res.redirect(enlaceCalculadoraBaugh(req.user)));
-```
+En El Castillo la app está registrada como `calculadora` (rama `calculadora-finiquito`). Agrega allá `CALCULADORA_URL` con la URL de esta app terminando en `/baugh/` y da permiso desde `/admin` a quien deba usarla.
 
 ## Desarrollo local
 
 ```
 npm install
-SESSION_SECRET=$(node -e "console.log('x'.repeat(40))") BAUGH_PASSWORD=prueba npm start
+SESSION_SECRET=$(node -e "console.log('x'.repeat(40))") BAUGH_PASSWORD=prueba CASTILLO_URL=http://localhost:4060 CASTILLO_API_KEY=dev-castillo-key-cambiar-en-produccion npm start
 ```
 
 Abre http://localhost:3000 (Donceles) y http://localhost:3000/baugh/ (Baugh).

@@ -7,16 +7,19 @@
  *   /baugh/  → Calculadora de Finiquito Baugh (Baugh Abogados) — solo equipo
  *
  * Acceso a /baugh/ por dos vías:
- *   1. Contraseña del equipo (variable BAUGH_PASSWORD).
- *   2. Inicio de sesión único desde El Castillo: El Castillo firma un token
- *      HS256 con CASTILLO_SSO_SECRET y redirige a /baugh/sso?token=...
+ *   1. Usuario de El Castillo: la persona elige su nombre, escribe su PIN y El Castillo
+ *      confirma que tiene permiso para la app "calculadora" (mismo esquema que las demás
+ *      apps del despacho: /api/usuarios-selector, /api/pin/*, /api/permiso con x-api-key).
+ *   2. Contraseña del equipo (BAUGH_PASSWORD), como respaldo.
  *
  * Variables de entorno (Railway):
- *   PORT                 lo asigna Railway
- *   SESSION_SECRET       obligatorio — cadena larga aleatoria para firmar la cookie de sesión
- *   BAUGH_PASSWORD       contraseña del equipo (si falta, se desactiva la entrada por contraseña)
- *   CASTILLO_SSO_SECRET  secreto compartido con El Castillo (si falta, se desactiva el SSO)
- *   SESSION_HOURS        duración de la sesión en horas (por defecto 12)
+ *   PORT               lo asigna Railway
+ *   SESSION_SECRET     obligatorio — cadena aleatoria de 32+ caracteres para firmar la cookie
+ *   CASTILLO_URL       URL de El Castillo, p. ej. https://el-castillo-production.up.railway.app
+ *   CASTILLO_API_KEY   la misma CASTILLO_API_KEY configurada en El Castillo
+ *   CASTILLO_APP_KEY   clave de la app en El Castillo (por defecto "calculadora")
+ *   BAUGH_PASSWORD     contraseña del equipo (si falta, solo se entra con El Castillo)
+ *   SESSION_HOURS      duración de la sesión en horas (por defecto 12)
  */
 
 const path = require('path');
@@ -27,22 +30,20 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
 const BAUGH_PASSWORD = process.env.BAUGH_PASSWORD || '';
-const CASTILLO_SSO_SECRET = process.env.CASTILLO_SSO_SECRET || '';
+const CASTILLO_URL = (process.env.CASTILLO_URL || '').replace(/\/+$/, '');
+const CASTILLO_API_KEY = process.env.CASTILLO_API_KEY || '';
+const CASTILLO_APP_KEY = process.env.CASTILLO_APP_KEY || 'calculadora';
+const CASTILLO_ACTIVO = !!(CASTILLO_URL && CASTILLO_API_KEY);
 const SESSION_HOURS = Number(process.env.SESSION_HOURS) || 12;
 const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
 const COOKIE_NAME = 'baugh_sesion';
-const SSO_AUDIENCE = 'calculadora-baugh';
-const SSO_ISSUER = 'el-castillo';
-const SSO_MAX_AGE_S = 300; // un token de El Castillo vale máximo 5 minutos
 
 if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
-  if (IS_PROD) {
-    console.error('Falta SESSION_SECRET (mínimo 32 caracteres). La ruta /baugh/ queda cerrada.');
-  } else {
-    console.warn('SESSION_SECRET no configurado: usando uno temporal solo para desarrollo.');
-  }
+  if (IS_PROD) console.error('Falta SESSION_SECRET (mínimo 32 caracteres). La ruta /baugh/ queda cerrada.');
+  else console.warn('SESSION_SECRET no configurado: usando uno temporal solo para desarrollo.');
 }
 const SECRET = SESSION_SECRET.length >= 32 ? SESSION_SECRET : (IS_PROD ? null : crypto.randomBytes(32).toString('hex'));
+if (!CASTILLO_ACTIVO) console.warn('CASTILLO_URL / CASTILLO_API_KEY no configurados: la entrada con usuario de El Castillo queda desactivada.');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -97,56 +98,65 @@ function borrarSesion(res) {
   res.setHeader('Set-Cookie', [`${COOKIE_NAME}=; Path=/baugh; HttpOnly; SameSite=Lax; Max-Age=0${IS_PROD ? '; Secure' : ''}`]);
 }
 
-// ---------- verificación del token de El Castillo (JWT HS256) ----------
-function verificarTokenCastillo(token) {
-  if (!CASTILLO_SSO_SECRET || !token) return { ok: false, motivo: 'sso_desactivado' };
-  const parts = String(token).split('.');
-  if (parts.length !== 3) return { ok: false, motivo: 'formato' };
-  const [h, p, s] = parts;
-  let header, payload;
+// ---------- cliente de El Castillo ----------
+async function castillo(pathname, { method = 'GET', body, timeoutMs = 5000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    header = JSON.parse(fromB64url(h).toString('utf8'));
-    payload = JSON.parse(fromB64url(p).toString('utf8'));
-  } catch (e) {
-    return { ok: false, motivo: 'formato' };
+    const res = await fetch(`${CASTILLO_URL}/api${pathname}`, {
+      method,
+      headers: { 'x-api-key': CASTILLO_API_KEY, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } finally {
+    clearTimeout(timer);
   }
-  if (header.alg !== 'HS256') return { ok: false, motivo: 'algoritmo' };
-  const expected = b64url(crypto.createHmac('sha256', CASTILLO_SSO_SECRET).update(`${h}.${p}`).digest());
-  if (!safeEqual(s, expected)) return { ok: false, motivo: 'firma' };
-  const now = Math.floor(Date.now() / 1000);
-  if (!payload.exp || payload.exp < now) return { ok: false, motivo: 'vencido' };
-  if (payload.iat && payload.exp - payload.iat > SSO_MAX_AGE_S) return { ok: false, motivo: 'vigencia' };
-  if (payload.iss !== SSO_ISSUER) return { ok: false, motivo: 'emisor' };
-  const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(SSO_AUDIENCE)) return { ok: false, motivo: 'audiencia' };
-  if (!payload.sub) return { ok: false, motivo: 'usuario' };
-  return { ok: true, payload };
 }
 
-// Evita reutilizar un mismo token (jti) durante su vigencia.
-const tokensUsados = new Map();
-function marcarTokenUsado(jti, exp) {
-  const now = Math.floor(Date.now() / 1000);
-  for (const [k, v] of tokensUsados) if (v < now) tokensUsados.delete(k);
-  if (!jti) return true;
-  if (tokensUsados.has(jti)) return false;
-  tokensUsados.set(jti, exp);
-  return true;
+async function nivelPermiso(usuarioId) {
+  const r = await castillo(`/permiso?usuario_id=${encodeURIComponent(usuarioId)}&app=${encodeURIComponent(CASTILLO_APP_KEY)}`);
+  if (!r.ok) throw new Error(`El Castillo respondió ${r.status} al consultar permiso`);
+  return r.data.nivel || 'ninguno';
 }
 
-// ---------- límite de intentos de contraseña ----------
-const intentos = new Map(); // ip -> { n, hasta }
+// Revalida el permiso como máximo una vez cada 5 minutos por usuario, para que
+// quitar el permiso en El Castillo saque a la persona sin esperar a que venza su sesión.
+const permisoCache = new Map(); // usuario_id -> { nivel, hasta }
+async function sigueAutorizado(usuarioId) {
+  const c = permisoCache.get(usuarioId);
+  if (c && c.hasta > Date.now()) return c.nivel !== 'ninguno';
+  try {
+    const nivel = await nivelPermiso(usuarioId);
+    permisoCache.set(usuarioId, { nivel, hasta: Date.now() + 5 * 60 * 1000 });
+    return nivel !== 'ninguno';
+  } catch (e) {
+    // Si El Castillo no responde, se respeta la sesión vigente en vez de dejar fuera al equipo.
+    console.warn('No se pudo revalidar el permiso en El Castillo:', e.message);
+    return true;
+  }
+}
+
+// ---------- límite de intentos (por IP y por usuario) ----------
+const intentos = new Map(); // clave -> { n, hasta }
 const MAX_INTENTOS = 5;
 const VENTANA_MS = 15 * 60 * 1000;
-function bloqueado(ip) {
-  const r = intentos.get(ip);
-  return r && r.n >= MAX_INTENTOS && r.hasta > Date.now();
+function bloqueado(...claves) {
+  return claves.some((k) => {
+    const r = intentos.get(k);
+    return r && r.n >= MAX_INTENTOS && r.hasta > Date.now();
+  });
 }
-function registrarFallo(ip) {
-  const r = intentos.get(ip);
-  if (!r || r.hasta < Date.now()) intentos.set(ip, { n: 1, hasta: Date.now() + VENTANA_MS });
-  else r.n += 1;
+function registrarFallo(...claves) {
+  claves.forEach((k) => {
+    const r = intentos.get(k);
+    if (!r || r.hasta < Date.now()) intentos.set(k, { n: 1, hasta: Date.now() + VENTANA_MS });
+    else r.n += 1;
+  });
 }
+function limpiarFallos(...claves) { claves.forEach((k) => intentos.delete(k)); }
 
 // ---------- cabeceras de seguridad ----------
 app.use((req, res, next) => {
@@ -163,44 +173,95 @@ const loginTpl = fs.readFileSync(path.join(__dirname, 'views', 'login.html'), 'u
 function renderLogin(res, { error = '', status = 200 } = {}) {
   const html = loginTpl
     .replace('{{ERROR}}', error ? `<p class="error" role="alert">${error}</p>` : '')
-    .replace('{{PASSWORD_FORM}}', BAUGH_PASSWORD ? '' : 'hidden')
-    .replace('{{SIN_PASSWORD}}', BAUGH_PASSWORD ? 'hidden' : '');
+    .replace('{{CASTILLO}}', CASTILLO_ACTIVO ? '' : 'hidden')
+    .replace('{{PASSWORD_FORM}}', BAUGH_PASSWORD ? '' : 'hidden');
   res.status(status).set('Cache-Control', 'no-store').type('html').send(html);
 }
 
 app.get('/baugh/login', (req, res) => {
   if (leerSesion(req)) return res.redirect('/baugh/');
-  const errores = {
-    sso: 'El enlace de El Castillo no es válido o ya venció. Vuelve a abrir la calculadora desde El Castillo.',
+  const avisos = {
     salida: 'Cerraste sesión.',
+    permiso: 'Tu usuario ya no tiene permiso para esta calculadora. Pídelo en El Castillo.',
   };
-  renderLogin(res, { error: errores[req.query.e] || '' });
+  renderLogin(res, { error: avisos[req.query.e] || '' });
 });
 
+// Contraseña del equipo
 app.post('/baugh/login', express.urlencoded({ extended: false, limit: '2kb' }), (req, res) => {
   const ip = req.ip;
   if (!SECRET) return renderLogin(res, { error: 'El acceso no está configurado en el servidor.', status: 503 });
-  if (!BAUGH_PASSWORD) return renderLogin(res, { error: 'La entrada con contraseña está desactivada. Entra desde El Castillo.', status: 403 });
-  if (bloqueado(ip)) return renderLogin(res, { error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.', status: 429 });
+  if (!BAUGH_PASSWORD) return renderLogin(res, { error: 'La entrada con contraseña está desactivada. Entra con tu usuario de El Castillo.', status: 403 });
+  if (bloqueado(`ip:${ip}`)) return renderLogin(res, { error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.', status: 429 });
   const pass = (req.body && req.body.password) || '';
   if (!safeEqual(pass, BAUGH_PASSWORD)) {
-    registrarFallo(ip);
+    registrarFallo(`ip:${ip}`);
     return renderLogin(res, { error: 'Contraseña incorrecta.', status: 401 });
   }
-  intentos.delete(ip);
+  limpiarFallos(`ip:${ip}`);
   crearSesion(res, { sub: 'equipo', via: 'password' });
   res.redirect(303, '/baugh/');
 });
 
-app.get('/baugh/sso', (req, res) => {
-  if (!SECRET) return res.redirect('/baugh/login?e=sso');
-  const r = verificarTokenCastillo(req.query.token);
-  if (!r.ok || !marcarTokenUsado(r.payload.jti, r.payload.exp)) {
-    console.warn('SSO rechazado:', r.ok ? 'token_reutilizado' : r.motivo);
-    return res.redirect('/baugh/login?e=sso');
+// Usuarios de El Castillo (solo nombre, iniciales, color y si ya tiene PIN)
+app.get('/baugh/api/usuarios', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!CASTILLO_ACTIVO) return res.status(503).json({ error: 'El Castillo no está configurado.' });
+  try {
+    const r = await castillo('/usuarios-selector');
+    if (!r.ok || !Array.isArray(r.data)) throw new Error(`respondió ${r.status}`);
+    res.json(r.data.map((u) => ({
+      id: u.id, nombre_completo: u.nombre_completo, iniciales: u.iniciales, color: u.color, tiene_pin: !!u.tiene_pin,
+    })));
+  } catch (e) {
+    console.warn('No se pudo leer usuarios de El Castillo:', e.message);
+    res.status(503).json({ error: 'No se pudo conectar con El Castillo.' });
   }
-  crearSesion(res, { sub: String(r.payload.sub), name: r.payload.name || '', via: 'castillo' });
-  res.redirect(303, '/baugh/');
+});
+
+// Entrada con usuario de El Castillo + PIN
+app.post('/baugh/api/entrar', express.json({ limit: '2kb' }), async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const ip = req.ip;
+  const { usuario_id, pin, crear } = req.body || {};
+  if (!SECRET || !CASTILLO_ACTIVO) return res.status(503).json({ error: 'El acceso con El Castillo no está configurado.' });
+  if (!usuario_id || typeof usuario_id !== 'string' || !/^\d{2,4}$/.test(String(pin || ''))) {
+    return res.status(400).json({ error: 'Elige tu nombre y escribe un PIN de 2 a 4 dígitos.' });
+  }
+  const claves = [`ip:${ip}`, `u:${usuario_id}`];
+  if (bloqueado(...claves)) return res.status(429).json({ error: 'Demasiados intentos. Espera 15 minutos e inténtalo de nuevo.' });
+
+  try {
+    // 1. Permiso primero: quien no tiene acceso a la calculadora no llega ni a crear PIN.
+    const nivel = await nivelPermiso(usuario_id);
+    if (nivel === 'ninguno') {
+      registrarFallo(...claves);
+      return res.status(403).json({ error: 'Tu usuario no tiene permiso para esta calculadora. Pídelo en El Castillo.' });
+    }
+
+    // 2. PIN: se crea la primera vez (como en las demás apps) o se verifica.
+    if (crear) {
+      const c = await castillo('/pin/crear', { method: 'POST', body: { usuario_id, pin: String(pin) } });
+      if (c.status === 409) return res.status(409).json({ error: 'Este usuario ya tiene PIN. Escríbelo para entrar.' });
+      if (!c.ok) throw new Error(`pin/crear respondió ${c.status}`);
+    } else {
+      const v = await castillo('/pin/verificar', { method: 'POST', body: { usuario_id, pin: String(pin) } });
+      if (!v.ok) throw new Error(`pin/verificar respondió ${v.status}`);
+      if (!v.data.valido) {
+        registrarFallo(...claves);
+        return res.status(401).json({ error: 'PIN incorrecto.' });
+      }
+    }
+
+    limpiarFallos(...claves);
+    permisoCache.set(usuario_id, { nivel, hasta: Date.now() + 5 * 60 * 1000 });
+    const nombre = typeof req.body.nombre === 'string' ? req.body.nombre.slice(0, 80) : '';
+    crearSesion(res, { sub: usuario_id, name: nombre, via: 'castillo' });
+    res.json({ ok: true });
+  } catch (e) {
+    console.warn('Error al validar con El Castillo:', e.message);
+    res.status(503).json({ error: 'No se pudo conectar con El Castillo. Intenta de nuevo o usa la contraseña del equipo.' });
+  }
 });
 
 app.get('/baugh/logout', (req, res) => {
@@ -229,11 +290,15 @@ app.get('/baugh', (req, res, next) => {
   if (req.originalUrl.split('?')[0] !== '/baugh') return next();
   res.redirect(301, '/baugh/');
 });
-app.use('/baugh', (req, res, next) => {
-  if (leerSesion(req)) return next();
+app.use('/baugh', async (req, res, next) => {
+  const s = leerSesion(req);
   const quiereHtml = (req.headers.accept || '').includes('text/html');
-  if (quiereHtml) return res.redirect('/baugh/login');
-  res.status(401).json({ ok: false });
+  if (!s) return quiereHtml ? res.redirect('/baugh/login') : res.status(401).json({ ok: false });
+  if (s.via === 'castillo' && CASTILLO_ACTIVO && quiereHtml && !(await sigueAutorizado(s.sub))) {
+    borrarSesion(res);
+    return res.redirect('/baugh/login?e=permiso');
+  }
+  next();
 });
 app.use('/baugh', express.static(baughDir, {
   index: 'index.html',

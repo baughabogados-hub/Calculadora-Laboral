@@ -2,7 +2,7 @@
 // Estrategia: primero red, y si no hay conexión, la copia guardada.
 const CACHE = 'baugh-v1';
 const PRECACHE = ['/baugh/', '/baugh/manifest.webmanifest', '/baugh/icons/icon-192.png', '/baugh/icons/logo-baugh.png'];
-const NO_CACHE = /^\/baugh\/(login|logout|sso|session)/;
+const NO_CACHE = /^\/baugh\/(login|logout|api|session)/;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).catch(() => {}).then(() => self.skipWaiting()));
