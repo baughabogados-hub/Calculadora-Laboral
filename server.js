@@ -30,8 +30,16 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
 const BAUGH_PASSWORD = process.env.BAUGH_PASSWORD || '';
-const CASTILLO_URL = (process.env.CASTILLO_URL || '').replace(/\/+$/, '');
-const CASTILLO_API_KEY = process.env.CASTILLO_API_KEY || '';
+// Acepta la dirección de El Castillo aunque venga sin https://, con /admin u otra ruta,
+// con / al final, con espacios o entre comillas: se queda solo con el origen.
+function normalizarUrl(raw) {
+  let s = String(raw || '').trim().replace(/^["']+|["']+$/g, '').trim();
+  if (!s) return '';
+  if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
+  try { return new URL(s).origin; } catch (e) { return ''; }
+}
+const CASTILLO_URL = normalizarUrl(process.env.CASTILLO_URL);
+const CASTILLO_API_KEY = String(process.env.CASTILLO_API_KEY || '').trim().replace(/^["']+|["']+$/g, '');
 const CASTILLO_APP_KEY = process.env.CASTILLO_APP_KEY || 'calculadora';
 const CASTILLO_ACTIVO = !!(CASTILLO_URL && CASTILLO_API_KEY);
 const SESSION_HOURS = Number(process.env.SESSION_HOURS) || 12;
@@ -203,6 +211,35 @@ app.post('/baugh/login', express.urlencoded({ extended: false, limit: '2kb' }), 
   res.redirect(303, '/baugh/');
 });
 
+// Diagnóstico de la conexión con El Castillo. No muestra la API key ni datos de usuarios:
+// solo a qué servidor apunta y si responde, para ubicar errores de configuración.
+app.get('/baugh/api/diagnostico', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const motivo = (e) => (e && e.cause && (e.cause.code || e.cause.message)) || (e && (e.name === 'AbortError' ? 'TIMEOUT' : e.message)) || 'desconocido';
+  const out = {
+    castillo_url_configurada: !!process.env.CASTILLO_URL,
+    castillo_servidor: CASTILLO_URL ? new URL(CASTILLO_URL).host : null,
+    api_key_configurada: !!CASTILLO_API_KEY,
+    session_secret_ok: !!SECRET,
+    password_respaldo: !!BAUGH_PASSWORD,
+    app_key: CASTILLO_APP_KEY,
+  };
+  if (!CASTILLO_URL) return res.json({ ...out, resultado: 'CASTILLO_URL vacía o inválida' });
+  try {
+    const r = await fetch(`${CASTILLO_URL}/health`, { signal: AbortSignal.timeout(5000) });
+    out.castillo_health = r.status;
+  } catch (e) { out.castillo_health = `error: ${motivo(e)}`; }
+  try {
+    const r = await castillo('/usuarios-selector');
+    out.usuarios = r.ok && Array.isArray(r.data) ? `ok (${r.data.length})` : `HTTP ${r.status}`;
+  } catch (e) { out.usuarios = `error: ${motivo(e)}`; }
+  try {
+    const r = await castillo(`/permiso?usuario_id=diagnostico&app=${encodeURIComponent(CASTILLO_APP_KEY)}`);
+    out.api_key = r.status === 401 ? 'rechazada (no coincide con la de El Castillo)' : r.status === 400 ? `app "${CASTILLO_APP_KEY}" no registrada en El Castillo` : r.ok ? 'aceptada' : `HTTP ${r.status}`;
+  } catch (e) { out.api_key = `error: ${motivo(e)}`; }
+  res.json(out);
+});
+
 // Usuarios de El Castillo (solo nombre, iniciales, color y si ya tiene PIN)
 app.get('/baugh/api/usuarios', async (req, res) => {
   res.set('Cache-Control', 'no-store');
@@ -214,7 +251,7 @@ app.get('/baugh/api/usuarios', async (req, res) => {
       id: u.id, nombre_completo: u.nombre_completo, iniciales: u.iniciales, color: u.color, tiene_pin: !!u.tiene_pin,
     })));
   } catch (e) {
-    console.warn('No se pudo leer usuarios de El Castillo:', e.message);
+    console.warn('No se pudo leer usuarios de El Castillo:', e.message, e.cause ? (e.cause.code || e.cause.message) : '');
     res.status(503).json({ error: 'No se pudo conectar con El Castillo.' });
   }
 });
