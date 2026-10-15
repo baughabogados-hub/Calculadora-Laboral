@@ -20,12 +20,15 @@
  *   CASTILLO_APP_KEY   clave de la app en El Castillo (por defecto "calculadora")
  *   BAUGH_PASSWORD     contraseña del equipo (si falta, solo se entra con El Castillo)
  *   SESSION_HOURS      duración de la sesión en horas (por defecto 12)
+ *   DATA_DIR           carpeta de las estadísticas; en Railway, la ruta del volumen (p. ej. /data)
+ *   GA_ID              ID de medición de Google Analytics (G-XXXXXXX); vacío = sin Google Analytics
  */
 
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
+const estadisticas = require('./estadisticas');
 
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
@@ -175,6 +178,31 @@ app.use((req, res, next) => {
 });
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
+
+// ---------- configuración pública para el navegador (Google Analytics) ----------
+const GA_ID = /^G-[A-Z0-9]{4,20}$/.test(String(process.env.GA_ID || '').trim()) ? String(process.env.GA_ID).trim() : '';
+app.get('/api/config', (req, res) => {
+  res.set('Cache-Control', 'no-cache').json({ ga_id: GA_ID || null });
+});
+
+// ---------- registro de eventos de uso (solo conteos, sin datos capturados) ----------
+const eventosPorIp = new Map(); // ip -> { n, hasta }
+app.post(['/api/evento', '/baugh/api/evento'], express.json({ limit: '1kb', type: () => true }), (req, res) => {
+  const ip = req.ip;
+  const r = eventosPorIp.get(ip);
+  if (!r || r.hasta < Date.now()) eventosPorIp.set(ip, { n: 1, hasta: Date.now() + 60 * 60 * 1000 });
+  else if (++r.n > 300) return res.status(429).end();
+
+  const { app: cual, tipo } = req.body || {};
+  let usuario = null;
+  if (cual === 'baugh') {
+    const s = leerSesion(req);
+    if (!s) return res.status(204).end();
+    usuario = s.via === 'password' ? 'Contraseña del equipo' : (s.name || `Usuario ${s.sub}`);
+  }
+  estadisticas.registrar(cual, tipo, usuario);
+  res.status(204).end();
+});
 
 // ---------- página de acceso ----------
 const loginTpl = fs.readFileSync(path.join(__dirname, 'views', 'login.html'), 'utf8');
@@ -337,6 +365,12 @@ app.use('/baugh', async (req, res, next) => {
   }
   next();
 });
+app.get('/baugh/api/estadisticas', (req, res) => {
+  res.set('Cache-Control', 'no-store').json(estadisticas.resumen());
+});
+app.get('/baugh/estadisticas', (req, res) => {
+  res.set('Cache-Control', 'no-store').sendFile(path.join(__dirname, 'views', 'estadisticas.html'));
+});
 app.use('/baugh', express.static(baughDir, {
   index: 'index.html',
   setHeaders: (res) => res.set('Cache-Control', 'private, no-cache'),
@@ -345,6 +379,7 @@ app.use('/baugh', express.static(baughDir, {
 // ---------- calculadora pública (Donceles) ----------
 app.use(express.static(path.join(__dirname, 'public'), {
   index: 'index.html',
+  extensions: ['html'],
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('sw.js') || filePath.endsWith('.webmanifest')) res.set('Cache-Control', 'no-cache');
   },

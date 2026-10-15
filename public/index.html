@@ -458,6 +458,7 @@
     input, select { border: 1px solid #999; }
     .disclaimer { break-inside: avoid; }
   }
+  .legal-links a { color: inherit; }
 </style>
 
 </head>
@@ -583,6 +584,7 @@
 
   <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo y las vacaciones se prorratean por días transcurridos desde el último aniversario / desde el 1 de enero, con base de 365 días. La prima de antigüedad (Art. 162 y 486 LFT) usa como base el salario diario real, pero acotado entre una y dos veces el salario mínimo general diario capturado arriba (piso y techo). La indemnización se separa en tres conceptos: Constitucional (fija, 90 días de salario — 120 si se marca recorte de personal, Art. 439 — no depende de la antigüedad); Laboral (Art. 50, que solo se paga en rescisión por el trabajador imputable al patrón —Art. 51/52—, negativa patronal a reinstalar tras laudo, insumisión al arbitraje del patrón, o recorte de personal; no en cualquier despido injustificado), calculada a 20 días por año si el contrato era por tiempo indeterminado (Art. 50-II), o a la mitad del tiempo servido si el contrato determinado duró menos de un año, o a 6 meses del primer año más 20 días por cada año siguiente si duró más (Art. 50-I); y Salarios vencidos/caídos (Art. 48 y 50-III), del salario diario por los días transcurridos entre la fecha de baja y la fecha de pago/resolución capturada, con tope de 12 meses (360 días) — no se calculan los intereses moratorios que pueden proceder si se excede ese plazo. En mutuo acuerdo (y cualquier otra terminación) se puede pactar el pago de Gratificación y/o Prima de Antigüedad aunque la ley no los exija — usa el campo "Gratificación" y el checkbox de prima de antigüedad voluntaria para incluirlos. No sustituye la revisión de contrato colectivo, prestaciones superiores a la ley o condiciones particulares del caso.</p>
 
+  <p class="contacto legal-links"><a href="/privacidad">Aviso de privacidad</a></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1029,6 +1031,7 @@
   $('f').addEventListener('submit', function (e) {
     e.preventDefault();
     calcular();
+    if ($('results').querySelector('.total-row') && window.registrarEvento) window.registrarEvento('calculo');
   });
 
   // Construye el PDF real con jsPDF (cargado desde cdnjs) y arma el Blob.
@@ -1366,6 +1369,7 @@
     if (!enClaudeArtifact && window.jspdf) {
       try {
         construirPdfDoc().save(filename);
+        if (window.registrarEvento) window.registrarEvento('pdf');
         $('btnPdf').textContent = 'Descargado';
       } catch (err) {
         $('btnPdf').textContent = 'No disponible';
@@ -1456,5 +1460,6 @@
   }
 })();
 </script>
+<script src="/analitica.js" defer></script>
 </body>
 </html>
