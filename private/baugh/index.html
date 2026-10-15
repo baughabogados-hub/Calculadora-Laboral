@@ -538,6 +538,7 @@
   @media print {
     .group { break-inside: avoid; }
   }
+  .legal-links a { color: inherit; }
 </style>
 
 </head>
@@ -740,6 +741,7 @@
 
   <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario (cuota diaria) se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo (días por año capturados, mínimo legal 15, Art. 87) y las vacaciones (tabla del Art. 76 más los días adicionales capturados) se prorratean por días transcurridos desde el 1 de enero / desde el último aniversario, con base de 365 días, sobre la cuota diaria; la prima vacacional usa el porcentaje capturado (mínimo legal 25%, Art. 80). Horas extras: valor de la hora = cuota diaria ÷ horas de jornada; dobles al 200% (Art. 67) y triples al 300% (Art. 68). Descanso semanal y obligatorio laborados: dos salarios adicionales (Arts. 73 y 75); prima dominical 25% (Art. 71). El salario diario integrado (SDI) suma a la cuota diaria la parte proporcional diaria del aguinaldo y de la prima vacacional, más el promedio mensual ÷ 30 de cada percepción marcada como «Integra» (Arts. 84 y 89). Si una percepción integra o no es cuestión del caso: conforme a la tesis II.T.298 L, integra la que se entrega a cambio del trabajo, de forma ordinaria y permanente, aunque sea variable; la tesis aislada III.5o.T.9 L (10a.), registro 2022757, respeta la cláusula contractual que excluye expresamente una prestación extralegal del salario integrado. Las exclusiones del Art. 27 de la Ley del Seguro Social (despensa, premios de puntualidad y asistencia, fondo de ahorro) rigen para el salario base de cotización, no para la LFT. El saldo de caja o fondo de ahorro (Art. 110-IV) se devuelve al trabajador y no es indemnización. La prima de antigüedad (Arts. 162 y 486) usa la cuota diaria, acotada entre una y dos veces el salario mínimo capturado. La indemnización se separa en Constitucional (90 días fijos, 120 si es recorte de personal, Art. 439); Laboral (Art. 50, solo en rescisión imputable al patrón —Arts. 51/52—, negativa a reinstalar, insumisión al arbitraje o recorte), a 20 días por año en contrato indeterminado (50-II) o conforme al 50-I en contrato determinado; y Salarios vencidos (Arts. 48 y 50-III), de la fecha de baja a la de pago, con tope de 12 meses, sin intereses moratorios. Las tres usan el SDI salvo que se desmarque la opción. No calcula ISR ni retenciones. No sustituye la revisión de contrato colectivo, reglamentos, prácticas de la empresa ni las condiciones particulares del caso.</p>
 
+  <p class="contacto legal-links"><a href="/baugh/estadisticas">Estadísticas de uso</a> · <a href="/privacidad">Aviso de privacidad</a></p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1296,7 +1298,8 @@ window.LORA_TTF = {
     resumenRows = rows;
   }
 
-  $('f').addEventListener('submit', function (e) { e.preventDefault(); calcular(); });
+  $('f').addEventListener('submit', function (e) { e.preventDefault(); calcular();
+    if ($('results').querySelector('.total-row') && window.registrarEvento) window.registrarEvento('calculo'); });
 
   function construirPdfBlob() { return construirPdfDoc().output('blob'); }
 
@@ -1523,6 +1526,7 @@ window.LORA_TTF = {
     if (!enClaudeArtifact && window.jspdf) {
       try {
         construirPdfDoc().save(filename);
+        if (window.registrarEvento) window.registrarEvento('pdf');
         $('btnPdf').textContent = 'Descargado';
       } catch (err) {
         $('btnPdf').textContent = 'No disponible';
@@ -1603,5 +1607,6 @@ window.LORA_TTF = {
   }
 })();
 </script>
+<script src="/analitica.js" defer></script>
 </body>
 </html>

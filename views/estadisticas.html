@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estadísticas · Calculadoras de Finiquito</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<link rel="icon" href="/baugh/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap">
+<style>
+  /* Layout: tablero de una columna — resumen arriba, detalle por día y por persona abajo */
+  :root {
+    --ink: #111111; --ink-soft: #3a3a3a; --ink-faint: #767676;
+    --paper: #f5f5f3; --raised: #ffffff; --line: #dadad6; --chip: #efefec;
+    --donceles: #9c7a48; --baugh: #111111;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #f2f2f0; --ink-soft: #c8c8c4; --ink-faint: #8e8e8a;
+      --paper: #0f0f0f; --raised: #191919; --line: #333331; --chip: #232322;
+      --donceles: #d9b273; --baugh: #f2f2f0;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Lora", Georgia, serif; padding: 28px 16px 56px; }
+  .page { max-width: 880px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 22px; }
+  h1 { font-size: clamp(24px, 4vw, 32px); margin: 0; font-weight: 600; text-wrap: balance; }
+  .sub { color: var(--ink-faint); font-size: 13px; margin: 4px 0 0; }
+  a.volver { color: var(--ink-soft); font-size: 14px; }
+  h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin: 30px 0 10px; font-weight: 700; }
+  .apps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .app { background: var(--raised); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; border-top: 4px solid var(--c); }
+  .app h3 { margin: 0 0 12px; font-size: 17px; }
+  .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .num b { display: block; font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .num span { font-size: 12px; color: var(--ink-faint); }
+  .mes { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .tabla { overflow-x: auto; background: var(--raised); border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); background: var(--chip); }
+  thead tr.grupo th { text-align: center; }
+  tr:last-child td { border-bottom: 0; }
+  .vacio { padding: 18px; color: var(--ink-faint); font-size: 14px; }
+  .nota { font-size: 12px; color: var(--ink-faint); margin-top: 24px; line-height: 1.55; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>Estadísticas de uso</h1>
+      <p class="sub" id="desde">Cargando…</p>
+    </div>
+    <a class="volver" href="/baugh/">← Volver a la calculadora</a>
+  </header>
+
+  <h2>Resumen desde el inicio</h2>
+  <div class="apps" id="resumen"></div>
+
+  <h2>Últimos 30 días, por día</h2>
+  <div class="tabla" id="porDia"></div>
+
+  <h2>Equipo de Baugh Abogados, por persona</h2>
+  <div class="tabla" id="porUsuario"></div>
+
+  <p class="nota">Solo se cuentan acciones: abrir la calculadora (visita), presionar «Calcular» (cálculo) y descargar el PDF. Nunca se guarda lo que se captura en la calculadora; el cálculo ocurre en el dispositivo de cada persona. Las fechas están en hora de Guadalajara.</p>
+</div>
+<script>
+(async function () {
+  const $ = (id) => document.getElementById(id);
+  const n = (v) => Number(v || 0).toLocaleString('es-MX');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fecha = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  let d;
+  try {
+    const r = await fetch('/baugh/api/estadisticas', { headers: { Accept: 'application/json' } });
+    if (r.status === 401) { location.href = '/baugh/login'; return; }
+    d = await r.json();
+  } catch (e) {
+    $('desde').textContent = 'No se pudieron cargar las estadísticas. Revisa tu conexión y recarga.';
+    return;
+  }
+  $('desde').textContent = `Contando desde el ${fecha(d.desde)} · hoy ${fecha(d.hoy)}`;
+
+  const tarjeta = (titulo, color, t, m) => `
+    <div class="app" style="--c:${color}">
+      <h3>${titulo}</h3>
+      <div class="nums">
+        <div class="num"><b>${n(t.visita)}</b><span>visitas</span></div>
+        <div class="num"><b>${n(t.calculo)}</b><span>cálculos</span></div>
+        <div class="num"><b>${n(t.pdf)}</b><span>PDFs</span></div>
+      </div>
+      <div class="mes">Últimos 30 días: ${n(m.visita)} visitas · ${n(m.calculo)} cálculos · ${n(m.pdf)} PDFs</div>
+    </div>`;
+  $('resumen').innerHTML =
+    tarjeta('Consultores Donceles (pública)', 'var(--donceles)', d.total.donceles, d.ultimos30.donceles) +
+    tarjeta('Baugh Abogados (equipo)', 'var(--baugh)', d.total.baugh, d.ultimos30.baugh);
+
+  $('porDia').innerHTML = d.porDia.length ? `
+    <table>
+      <thead>
+        <tr class="grupo"><th></th><th colspan="3">Donceles</th><th colspan="3">Baugh</th></tr>
+        <tr><th>Día</th><th>Visitas</th><th>Cálculos</th><th>PDFs</th><th>Visitas</th><th>Cálculos</th><th>PDFs</th></tr>
+      </thead>
+      <tbody>${d.porDia.map((r) => `<tr><td>${fecha(r.fecha)}</td>
+        <td>${n(r.donceles.visita)}</td><td>${n(r.donceles.calculo)}</td><td>${n(r.donceles.pdf)}</td>
+        <td>${n(r.baugh.visita)}</td><td>${n(r.baugh.calculo)}</td><td>${n(r.baugh.pdf)}</td></tr>`).join('')}</tbody>
+    </table>` : '<p class="vacio">Todavía no hay actividad registrada.</p>';
+
+  $('porUsuario').innerHTML = d.usuarios.length ? `
+    <table>
+      <thead><tr><th>Persona</th><th>Visitas</th><th>Cálculos</th><th>PDFs</th><th>Último uso</th></tr></thead>
+      <tbody>${d.usuarios.map((u) => `<tr><td>${esc(u.nombre)}</td><td>${n(u.visita)}</td><td>${n(u.calculo)}</td><td>${n(u.pdf)}</td><td>${u.ultimo ? fecha(u.ultimo) : '—'}</td></tr>`).join('')}</tbody>
+    </table>` : '<p class="vacio">Nadie del equipo ha usado la calculadora todavía.</p>';
+})();
+</script>
+</body>
+</html>

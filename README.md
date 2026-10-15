@@ -32,6 +32,8 @@ views/login.html          pantalla de acceso de Baugh
 | `BAUGH_PASSWORD` | Opcional. Contraseña del equipo como respaldo. Si la dejas vacía, solo se entra con El Castillo. |
 | `SESSION_HOURS` | Opcional. Horas que dura la sesión (12 por defecto). |
 | `CASTILLO_APP_KEY` | Opcional. Clave de la app en El Castillo (`calculadora` por defecto). |
+| `DATA_DIR` | Carpeta de las estadísticas. En Railway, la ruta del volumen: `/data`. |
+| `GA_ID` | Opcional. ID de medición de Google Analytics (`G-XXXXXXX`). Vacío = sin Google Analytics. |
 
 Para generar un secreto: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
@@ -61,6 +63,12 @@ SESSION_SECRET=$(node -e "console.log('x'.repeat(40))") BAUGH_PASSWORD=prueba CA
 ```
 
 Abre http://localhost:3000 (Donceles) y http://localhost:3000/baugh/ (Baugh).
+
+## Estadísticas, analítica y privacidad
+
+- **Estadísticas propias** en `/baugh/estadisticas` (solo equipo): visitas, cálculos y PDFs por día y por calculadora, y uso por persona en Baugh. Se guardan en `DATA_DIR/estadisticas.json`; en Railway hay que montar un **volumen** en `/data` para que no se borren en cada despliegue.
+- **Google Analytics**: solo se activa si `GA_ID` está configurado y la persona acepta el aviso de cookies.
+- **Aviso de privacidad** en `/privacidad` (LFPDPPP, DOF 20/03/2025). Lo capturado en la calculadora nunca sale del dispositivo.
 
 ## Notas
 
