@@ -358,7 +358,10 @@ app.get('/baugh', (req, res, next) => {
 app.use('/baugh', async (req, res, next) => {
   const s = leerSesion(req);
   const quiereHtml = (req.headers.accept || '').includes('text/html');
-  if (!s) return quiereHtml ? res.redirect('/baugh/login') : res.status(401).json({ ok: false });
+  // Las páginas redirigen al acceso aunque el cliente no pida text/html (p. ej. WhatsApp al
+  // generar la vista previa de la liga); solo las rutas de datos responden 401.
+  const esDatos = req.path.startsWith('/api/') || /\.(json|js|css|png|svg|ico|webmanifest)$/.test(req.path);
+  if (!s) return esDatos ? res.status(401).json({ ok: false }) : res.redirect('/baugh/login');
   if (s.via === 'castillo' && CASTILLO_ACTIVO && quiereHtml && !(await sigueAutorizado(s.sub))) {
     borrarSesion(res);
     return res.redirect('/baugh/login?e=permiso');
