@@ -1,6 +1,6 @@
 // Service worker — guarda la calculadora para que abra sin internet.
 // Estrategia: primero red, y si no hay conexión, la copia guardada.
-const CACHE = 'baugh-v1';
+const CACHE = 'baugh-v2';
 const PRECACHE = ['/baugh/', '/baugh/manifest.webmanifest', '/baugh/icons/icon-192.png', '/baugh/icons/logo-baugh.png'];
 const NO_CACHE = /^\/baugh\/(login|logout|api|session)/;
 
