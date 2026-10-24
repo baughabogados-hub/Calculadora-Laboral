@@ -488,12 +488,12 @@
   .perc { grid-column: 1 / -1; display: grid; gap: 8px; }
   .perc-head, .perc-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 74px;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 74px 74px;
     gap: 10px;
     align-items: center;
   }
   .perc-head { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; padding: 0 2px; }
-  .perc-head span:last-child { text-align: center; }
+  .perc-head span:nth-last-child(-n+2) { text-align: center; }
   .perc-row { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
   .perc-name { font-size: 13px; font-weight: 600; min-width: 0; }
   .perc-name small { display: block; font-weight: 400; font-size: 11px; color: var(--ink-faint); line-height: 1.35; margin-top: 2px; }
@@ -503,7 +503,7 @@
   .perc-int input { width: 17px; height: 17px; accent-color: var(--accent-strong); cursor: pointer; }
   .perc-int .mlabel { display: none; font-size: 11.5px; color: var(--ink-soft); font-weight: 600; }
   .perc-row .mlabel-in { display: none; font-size: 11px; color: var(--ink-faint); font-weight: 600; margin-bottom: 3px; }
-  .otra-row { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 74px; }
+  .otra-row { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) 74px 74px; }
   .otra-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .btn-x {
     font: inherit; font-size: 11.5px; font-weight: 700; color: var(--danger);
@@ -532,7 +532,7 @@
     .perc-head { display: none; }
     .perc-row, .otra-row { grid-template-columns: 1fr 1fr; }
     .perc-name { grid-column: 1 / -1; }
-    .perc-int { grid-column: 1 / -1; justify-content: flex-start; }
+    .perc-int { justify-content: flex-start; }
     .perc-int .mlabel, .perc-row .mlabel-in { display: block; }
   }
   @media print {
@@ -702,9 +702,9 @@
       <details class="group" id="grpPercepciones" open>
         <summary><span><span class="chev">›</span> Percepciones variables y prestaciones extralegales</span><span class="art">Arts. 84, 89 y 110 LFT</span></summary>
         <div class="group-body">
-          <p class="group-note full">«Promedio mensual» alimenta el salario diario integrado (÷ 30) cuando la casilla <strong>Integra</strong> está marcada. «Pendiente» es lo que se adeuda a la fecha de baja y se suma al pago. Para percepciones variables, el Art. 89 manda tomar el promedio de los últimos 30 días efectivamente trabajados; para agentes de comercio a comisión, el Art. 289 toma el promedio del último año.</p>
+          <p class="group-note full"><strong>Ordinario</strong>: el promedio mensual (÷ 30) forma parte del salario ordinario y se usa para aguinaldo, vacaciones, prima vacacional, gratificación y propuestas (p. ej. comisiones que son la retribución habitual). <strong>Integra</strong>: solo se suma al salario diario integrado, base de las indemnizaciones (Arts. 84 y 89). Lo ordinario siempre integra. «Pendiente» es lo que se adeuda a la fecha de baja y se suma al pago. Para percepciones variables, el Art. 89 manda tomar el promedio de los últimos 30 días efectivamente trabajados; para agentes de comercio, el Art. 289 toma el promedio del último año.</p>
           <div class="perc" id="percTable">
-            <div class="perc-head"><span>Concepto</span><span>Promedio mensual</span><span>Pendiente de pago</span><span>Integra</span></div>
+            <div class="perc-head"><span>Concepto</span><span>Promedio mensual</span><span>Pendiente de pago</span><span>Ordinario</span><span>Integra</span></div>
           </div>
           <div class="perc full">
             <div class="otra-actions">
@@ -715,8 +715,14 @@
           </div>
           <div class="field full checkbox-field">
             <label class="checkbox-label">
+              <input type="checkbox" id="topeLss" checked>
+              <span>Bonos de puntualidad y asistencia: integrar solo la parte que exceda del 10% del salario base de cotización (Art. 27-VII LSS). Desmárcalo para integrarlos completos, como lo pide literalmente el Art. 84 LFT.</span>
+            </label>
+          </div>
+          <div class="field full checkbox-field">
+            <label class="checkbox-label">
               <input type="checkbox" id="usarSDI" checked>
-              <span>Calcular indemnización constitucional, 20 días por año y salarios vencidos con salario diario integrado (Art. 89: cuota diaria más la parte proporcional de las prestaciones del Art. 84). Desmárcalo para usar solo la cuota diaria.</span>
+              <span>Calcular indemnización constitucional, 20 días por año y salarios vencidos con salario diario integrado (Art. 89: cuota diaria más la parte proporcional de las prestaciones del Art. 84). Desmárcalo para usar solo el salario ordinario (cuota diaria más lo marcado como «Ordinario»).</span>
             </label>
           </div>
         </div>
@@ -739,7 +745,7 @@
     </div>
   </div>
 
-  <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario (cuota diaria) se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo (días por año capturados, mínimo legal 15, Art. 87) y las vacaciones (tabla del Art. 76 más los días adicionales capturados) se prorratean por días transcurridos desde el 1 de enero / desde el último aniversario, con base de 365 días, sobre la cuota diaria; la prima vacacional usa el porcentaje capturado (mínimo legal 25%, Art. 80). Horas extras: valor de la hora = cuota diaria ÷ horas de jornada; dobles al 200% (Art. 67) y triples al 300% (Art. 68). Descanso semanal y obligatorio laborados: dos salarios adicionales (Arts. 73 y 75); prima dominical 25% (Art. 71). El salario diario integrado (SDI) suma a la cuota diaria la parte proporcional diaria del aguinaldo y de la prima vacacional, más el promedio mensual ÷ 30 de cada percepción marcada como «Integra» (Arts. 84 y 89). Si una percepción integra o no es cuestión del caso: conforme a la tesis II.T.298 L, integra la que se entrega a cambio del trabajo, de forma ordinaria y permanente, aunque sea variable; la tesis aislada III.5o.T.9 L (10a.), registro 2022757, respeta la cláusula contractual que excluye expresamente una prestación extralegal del salario integrado. Las exclusiones del Art. 27 de la Ley del Seguro Social (despensa, premios de puntualidad y asistencia, fondo de ahorro) rigen para el salario base de cotización, no para la LFT. El saldo de caja o fondo de ahorro (Art. 110-IV) se devuelve al trabajador y no es indemnización. La prima de antigüedad (Arts. 162 y 486) usa la cuota diaria, acotada entre una y dos veces el salario mínimo capturado. La indemnización se separa en Constitucional (90 días fijos, 120 si es recorte de personal, Art. 439); Laboral (Art. 50, solo en rescisión imputable al patrón —Arts. 51/52—, negativa a reinstalar, insumisión al arbitraje o recorte), a 20 días por año en contrato indeterminado (50-II) o conforme al 50-I en contrato determinado; y Salarios vencidos (Arts. 48 y 50-III), de la fecha de baja a la de pago, con tope de 12 meses, sin intereses moratorios. Las tres usan el SDI salvo que se desmarque la opción. No calcula ISR ni retenciones. No sustituye la revisión de contrato colectivo, reglamentos, prácticas de la empresa ni las condiciones particulares del caso.</p>
+  <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario (cuota diaria) se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo (días por año capturados, mínimo legal 15, Art. 87) y las vacaciones (tabla del Art. 76 más los días adicionales capturados) se prorratean por días transcurridos desde el 1 de enero / desde el último aniversario, con base de 365 días, sobre el salario ordinario (cuota diaria más las percepciones marcadas como «Ordinario»; jurisprudencia de la 4a. Sala «AGUINALDO. SALARIO BASE PARA LA CUANTIFICACIÓN DEL»); la prima vacacional usa el porcentaje capturado (mínimo legal 25%, Art. 80). Horas extras: valor de la hora = cuota diaria ÷ horas de jornada; dobles al 200% (Art. 67) y triples al 300% (Art. 68). Descanso semanal y obligatorio laborados: dos salarios adicionales (Arts. 73 y 75); prima dominical 25% (Art. 71). El salario diario integrado (SDI) suma al salario ordinario la parte proporcional diaria del aguinaldo y de la prima vacacional, más el promedio mensual ÷ 30 de cada percepción marcada como «Integra» (Arts. 84 y 89). Si está activo el tope, los premios de puntualidad y asistencia integran solo lo que cada uno exceda del 10% del salario base de cotización (Art. 27-VII LSS); el Art. 84 LFT no prevé esa exclusión, por lo que en juicio podría integrarse el premio completo. Si una percepción integra o no es cuestión del caso: conforme a la tesis II.T.298 L, integra la que se entrega a cambio del trabajo, de forma ordinaria y permanente, aunque sea variable; la tesis aislada III.5o.T.9 L (10a.), registro 2022757, respeta la cláusula contractual que excluye expresamente una prestación extralegal del salario integrado. Las exclusiones del Art. 27 de la Ley del Seguro Social (despensa, premios de puntualidad y asistencia, fondo de ahorro) rigen para el salario base de cotización, no para la LFT. El saldo de caja o fondo de ahorro (Art. 110-IV) se devuelve al trabajador y no es indemnización. La prima de antigüedad (Arts. 162 y 486) usa la cuota diaria, acotada entre una y dos veces el salario mínimo capturado. La indemnización se separa en Constitucional (90 días fijos, 120 si es recorte de personal, Art. 439); Laboral (Art. 50, solo en rescisión imputable al patrón —Arts. 51/52—, negativa a reinstalar, insumisión al arbitraje o recorte), a 20 días por año en contrato indeterminado (50-II) o conforme al 50-I en contrato determinado; y Salarios vencidos (Arts. 48 y 50-III), de la fecha de baja a la de pago, con tope de 12 meses, sin intereses moratorios. Las tres usan el SDI salvo que se desmarque la opción. No calcula ISR ni retenciones. No sustituye la revisión de contrato colectivo, reglamentos, prácticas de la empresa ni las condiciones particulares del caso.</p>
 
   <p class="contacto legal-links"><a href="/baugh/estadisticas">Estadísticas de uso</a> · <a href="/privacidad">Aviso de privacidad</a></p>
 </div>
@@ -796,10 +802,10 @@ window.LORA_TTF = {
 
   // --- Percepciones variables / extralegales (filas fijas) ---
   const PERC = [
-    { id: 'comisiones',  label: 'Comisiones', note: 'Art. 84 las menciona expresamente', integra: true },
+    { id: 'comisiones',  label: 'Comisiones', note: 'Art. 84 las menciona expresamente', integra: true, ordinario: true },
     { id: 'despensa',    label: 'Vales de despensa', note: 'Prestación en especie (Art. 84)', integra: true },
-    { id: 'puntualidad', label: 'Bono de puntualidad', note: 'Integra si es ordinario y permanente', integra: true },
-    { id: 'asistencia',  label: 'Bono de asistencia', note: 'Integra si es ordinario y permanente', integra: true },
+    { id: 'puntualidad', label: 'Bono de puntualidad', note: 'Integra solo lo que exceda del 10% del SBC (Art. 27-VII LSS) si el tope está activo', integra: true, topeLss: true },
+    { id: 'asistencia',  label: 'Bono de asistencia', note: 'Integra solo lo que exceda del 10% del SBC (Art. 27-VII LSS) si el tope está activo', integra: true, topeLss: true },
     { id: 'caja',        label: 'Caja / fondo de ahorro', note: 'Mensual: aportación patronal · Pendiente: saldo a devolver (Art. 110-IV)', integra: false, pendLabel: 'Saldo a devolver' },
     { id: 'heHabitual',  label: 'Horas extras habituales', note: 'Marca Integra solo si son fijas y permanentes; las pendientes van arriba', integra: false, sinPendiente: true },
   ];
@@ -813,11 +819,17 @@ window.LORA_TTF = {
         <div class="perc-name">${p.label}<small>${p.note}</small></div>
         <div><span class="mlabel-in">Promedio mensual</span><input type="number" id="${p.id}Mensual" min="0" step="0.01" value="0" aria-label="${p.label}: promedio mensual"></div>
         <div>${p.sinPendiente ? '<span class="na">—</span>' : `<span class="mlabel-in">${p.pendLabel || 'Pendiente de pago'}</span><input type="number" id="${p.id}Pendiente" min="0" step="0.01" value="0" aria-label="${p.label}: ${p.pendLabel || 'pendiente de pago'}">`}</div>
-        <label class="perc-int"><input type="checkbox" id="${p.id}Integra" ${p.integra ? 'checked' : ''} aria-label="${p.label}: integra salario"><span class="mlabel">Integra al SDI</span></label>`;
+        <label class="perc-int"><input type="checkbox" id="${p.id}Ordinario" data-ord="${p.id}" ${p.ordinario ? 'checked' : ''} aria-label="${p.label}: salario ordinario"><span class="mlabel">Salario ordinario</span></label>
+        <label class="perc-int"><input type="checkbox" id="${p.id}Integra" ${p.integra || p.ordinario ? 'checked' : ''} aria-label="${p.label}: integra salario"><span class="mlabel">Integra al SDI</span></label>`;
       tbl.appendChild(row);
     });
   }
   renderPercRows();
+  // Lo que es salario ordinario siempre integra: marcar «Ordinario» marca «Integra».
+  document.addEventListener('change', (e) => {
+    const id = e.target && e.target.dataset && e.target.dataset.ord;
+    if (id && e.target.checked) { const integ = $(`${id}Integra`); if (integ) integ.checked = true; }
+  });
 
   // --- Otras prestaciones extralegales (filas dinámicas) ---
   let otraSeq = 0;
@@ -830,6 +842,7 @@ window.LORA_TTF = {
       <div><span class="mlabel-in">Concepto</span><input type="text" id="otra${i}Concepto" placeholder="Ej. bono de productividad" value="${data && data.concepto ? esc(data.concepto) : ''}"><button type="button" class="btn-x" data-remove="${i}">Quitar</button></div>
       <div><span class="mlabel-in">Promedio mensual</span><input type="number" id="otra${i}Mensual" min="0" step="0.01" value="0" aria-label="Promedio mensual"></div>
       <div><span class="mlabel-in">Pendiente de pago</span><input type="number" id="otra${i}Pendiente" min="0" step="0.01" value="0" aria-label="Pendiente de pago"></div>
+      <label class="perc-int"><input type="checkbox" id="otra${i}Ordinario" data-ord="otra${i}" aria-label="Salario ordinario"><span class="mlabel">Salario ordinario</span></label>
       <label class="perc-int"><input type="checkbox" id="otra${i}Integra" aria-label="Integra salario"><span class="mlabel">Integra al SDI</span></label>`;
     $('otrasList').appendChild(row);
   }
@@ -850,7 +863,8 @@ window.LORA_TTF = {
         concepto: ($(`otra${i}Concepto`).value || '').trim() || 'Otra prestación extralegal',
         mensual: num(`otra${i}Mensual`),
         pendiente: num(`otra${i}Pendiente`),
-        integra: $(`otra${i}Integra`).checked,
+        integra: $(`otra${i}Integra`).checked || $(`otra${i}Ordinario`).checked,
+        ordinario: $(`otra${i}Ordinario`).checked,
       };
     }).filter((o) => o.mensual > 0 || o.pendiente > 0);
   }
@@ -1022,6 +1036,16 @@ window.LORA_TTF = {
 
     const DIVISOR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 };
     const salarioDiario = salarioIngresado / DIVISOR_PERIODO[periodicidad];
+
+    // --- Salario ordinario: cuota diaria + percepciones marcadas como ordinarias (promedio ÷ 30) ---
+    const ordinarios = [];
+    PERC.forEach((p) => {
+      const m = num(`${p.id}Mensual`);
+      if ($(`${p.id}Ordinario`).checked && m > 0) ordinarios.push({ id: p.id, label: p.id === 'caja' ? 'Caja de ahorro (aportación patronal)' : p.label, mensual: m });
+    });
+    leerOtras().forEach((o) => { if (o.ordinario && o.mensual > 0) ordinarios.push({ id: null, label: esc(o.concepto), mensual: o.mensual }); });
+    const salarioOrdinario = salarioDiario + ordinarios.reduce((acc, x) => acc + x.mensual / 30, 0);
+    const hayOrdinario = ordinarios.length > 0;
     const { y: aniosCompletos } = antiguedadYMD(start, end);
     const totalDiasServicio = diffDias(start, end);
     const aniosDecimal = totalDiasServicio / 365.25;
@@ -1043,12 +1067,12 @@ window.LORA_TTF = {
 
     // --- Finiquito ---
     const salariosPendientes = salarioDiario * diasPendientes;
-    const aguinaldoMonto = salarioDiario * aguinaldoDias;
-    const vacacionesMonto = salarioDiario * vacacionesDias;
+    const aguinaldoMonto = salarioOrdinario * aguinaldoDias;
+    const vacacionesMonto = salarioOrdinario * vacacionesDias;
     const primaVacacionalMonto = vacacionesMonto * primaFactor;
-    const vacacionesPendientesMonto = salarioDiario * vacacionesPendientesDias;
-    const primaVacacionalPendienteMonto = salarioDiario * primaVacacionalPendienteDias * primaFactor;
-    const gratificacionMonto = salarioDiario * gratificacionDias;
+    const vacacionesPendientesMonto = salarioOrdinario * vacacionesPendientesDias;
+    const primaVacacionalPendienteMonto = salarioOrdinario * primaVacacionalPendienteDias * primaFactor;
+    const gratificacionMonto = salarioOrdinario * gratificacionDias;
     const subtotalFiniquito = salariosPendientes + aguinaldoMonto + vacacionesMonto + primaVacacionalMonto
       + vacacionesPendientesMonto + primaVacacionalPendienteMonto + gratificacionMonto;
 
@@ -1068,28 +1092,39 @@ window.LORA_TTF = {
     PERC.forEach((p) => {
       const mensual = num(`${p.id}Mensual`);
       const pend = p.sinPendiente ? 0 : num(`${p.id}Pendiente`);
-      const integra = $(`${p.id}Integra`).checked;
+      const integra = $(`${p.id}Integra`).checked && !$(`${p.id}Ordinario`).checked;
       if (pend > 0) {
         const d = p.id === 'caja' ? 'Caja / fondo de ahorro — saldo a devolver' : `${p.label} pendientes`;
         adeudos.push({ desc: d, formula: p.id === 'caja' ? 'aportaciones + rendimientos (Art. 110-IV)' : 'monto adeudado a la baja', amt: pend, pdf: d });
       }
-      if (integra && mensual > 0) integrables.push({ label: p.id === 'caja' ? 'Caja de ahorro (aportación patronal)' : p.label, mensual });
+      if (integra && mensual > 0) integrables.push({ label: p.id === 'caja' ? 'Caja de ahorro (aportación patronal)' : p.label, mensual, topeLss: !!p.topeLss });
     });
     leerOtras().forEach((o) => {
       if (o.pendiente > 0) adeudos.push({ desc: `${esc(o.concepto)} pendiente`, formula: 'prestación extralegal', amt: o.pendiente, pdf: `${o.concepto} (pendiente)` });
-      if (o.integra && o.mensual > 0) integrables.push({ label: esc(o.concepto), mensual: o.mensual });
+      if (o.integra && !o.ordinario && o.mensual > 0) integrables.push({ label: esc(o.concepto), mensual: o.mensual });
     });
     const subtotalAdeudos = adeudos.reduce((s, a) => s + a.amt, 0);
 
     // --- Salario diario integrado (Arts. 84 y 89) ---
-    const sdiAguinaldo = salarioDiario * aguinaldoDiasAnio / 365;
-    const sdiPrimaVac = salarioDiario * diasVacAnio * primaFactor / 365;
-    const sdiVariables = integrables.reduce((s, x) => s + x.mensual / 30, 0);
-    const sdi = salarioDiario + sdiAguinaldo + sdiPrimaVac + sdiVariables;
+    const sdiAguinaldo = salarioOrdinario * aguinaldoDiasAnio / 365;
+    const sdiPrimaVac = salarioOrdinario * diasVacAnio * primaFactor / 365;
+    // Premios de puntualidad y asistencia (Art. 27-VII LSS): cada uno integra solo lo que exceda
+    // del 10% del salario base de cotización, calculado sin esos premios.
+    const topeLssActivo = $('topeLss').checked;
+    const baseSinPremios = salarioOrdinario + sdiAguinaldo + sdiPrimaVac
+      + integrables.filter((x) => !(topeLssActivo && x.topeLss)).reduce((acc, x) => acc + x.mensual / 30, 0);
+    const topePremio = baseSinPremios * 0.10;
+    integrables.forEach((x) => {
+      x.diario = x.mensual / 30;
+      x.integrado = (topeLssActivo && x.topeLss) ? Math.max(0, x.diario - topePremio) : x.diario;
+    });
+    const sdiVariables = integrables.reduce((acc, x) => acc + x.integrado, 0);
+    const sdi = salarioOrdinario + sdiAguinaldo + sdiPrimaVac + sdiVariables;
     const factorIntegracion = sdi / salarioDiario;
     const usarSDI = $('usarSDI').checked;
-    const baseIndem = usarSDI ? sdi : salarioDiario;
-    const baseIndemTxt = usarSDI ? 'SDI' : 'SD';
+    const baseIndem = usarSDI ? sdi : salarioOrdinario;
+    const baseIndemTxt = usarSDI ? 'SDI' : (hayOrdinario ? 'SO' : 'SD');
+    const baseIndemNombre = usarSDI ? 'salario diario integrado' : (hayOrdinario ? 'salario ordinario' : 'cuota diaria');
 
     const cfg = TIPOS[tipo];
 
@@ -1097,7 +1132,7 @@ window.LORA_TTF = {
     const primaAntiguedadVoluntaria = $('primaAntiguedadVoluntaria').checked;
     const primaAntiguedadPorLey = cfg.prima || aniosCompletos >= 15;
     const primaAntiguedadAplica = primaAntiguedadPorLey || primaAntiguedadVoluntaria;
-    const salarioBaseTope = Math.max(salarioMinimo, Math.min(salarioDiario, salarioMinimo * 2));
+    const salarioBaseTope = Math.max(salarioMinimo, Math.min(salarioOrdinario, salarioMinimo * 2));
     const primaAntiguedadMonto = primaAntiguedadAplica ? salarioBaseTope * 12 * aniosDecimal : 0;
 
     // --- Indemnización Constitucional ---
@@ -1170,6 +1205,7 @@ window.LORA_TTF = {
             <div class="datos-item"><p class="dl">Fecha de ingreso</p><p class="dv">${ingresoVal}</p></div>
             <div class="datos-item"><p class="dl">Fecha de separación</p><p class="dv">${bajaVal}</p></div>
             <div class="datos-item"><p class="dl">Salario diario</p><p class="dv datos-accent datos-strong">${fmt.format(salarioDiario)}</p></div>
+            ${hayOrdinario ? `<div class="datos-item"><p class="dl">Salario ordinario</p><p class="dv datos-accent datos-strong">${fmt.format(salarioOrdinario)}</p></div><div class="datos-item"></div>` : ''}
             <div class="datos-item"><p class="dl">Salario diario integrado</p><p class="dv datos-accent datos-strong">${fmt.format(sdi)}</p></div>
             <div class="datos-item"><p class="dl">Antigüedad</p><p class="dv">${fmtNum(aniosDecimal,2)} años (${totalDiasServicio} días)</p></div>
             <div class="datos-item"><p class="dl">Factor de integración</p><p class="dv">${fmtNum(factorIntegracion,4)}</p></div>
@@ -1180,23 +1216,27 @@ window.LORA_TTF = {
 
     // Integración del salario (informativo)
     html += `<div class="sdi-box ledger-group">
-      <p class="ledger-label">Integración del salario diario · Arts. 84 y 89 (informativo)</p>
+      <p class="ledger-label">Salario ordinario e integrado · Arts. 82, 84 y 89</p>
       ${lineHtml('Cuota diaria', 'salario capturado ÷ periodo', salarioDiario)}
-      ${lineHtml(`Aguinaldo (${fmtNum(aguinaldoDiasAnio,0)} d/año)`, `${fmtNum(salarioDiario,2)} × ${fmtNum(aguinaldoDiasAnio,0)} ÷ 365`, sdiAguinaldo)}
-      ${lineHtml(`Prima vacacional (${diasVacAnio} d × ${fmtNum(primaPct,0)}%)`, `${fmtNum(salarioDiario,2)} × ${diasVacAnio} × ${fmtNum(primaPct,0)}% ÷ 365`, sdiPrimaVac)}
-      ${integrables.map((x) => lineHtml(x.label, `${fmt.format(x.mensual)} mensual ÷ 30`, x.mensual / 30)).join('')}
-      <div class="ledger-subtotal"><span>Salario diario integrado${usarSDI ? '' : ' (no aplicado)'}</span><span class="amt">${fmt.format(sdi)}</span></div>
+      ${ordinarios.map((x) => lineHtml(x.label, `${fmt.format(x.mensual)} mensual ÷ 30`, x.mensual / 30, '<span class="badge-int">ordinario</span>')).join('')}
+      ${hayOrdinario ? `<div class="ledger-subtotal"><span>Salario ordinario</span><span class="amt">${fmt.format(salarioOrdinario)}</span></div>` : ''}
+      ${lineHtml(`Aguinaldo (${fmtNum(aguinaldoDiasAnio,0)} d/año)`, `${fmtNum(salarioOrdinario,2)} × ${fmtNum(aguinaldoDiasAnio,0)} ÷ 365`, sdiAguinaldo)}
+      ${lineHtml(`Prima vacacional (${diasVacAnio} d × ${fmtNum(primaPct,0)}%)`, `${fmtNum(salarioOrdinario,2)} × ${diasVacAnio} × ${fmtNum(primaPct,0)}% ÷ 365`, sdiPrimaVac)}
+      ${integrables.map((x) => (topeLssActivo && x.topeLss)
+        ? lineHtml(x.label, `${fmtNum(x.diario,2)} diario − tope 10% SBC ${fmtNum(topePremio,2)} (Art. 27-VII LSS)${x.integrado === 0 ? ' · no rebasa, no integra' : ''}`, x.integrado)
+        : lineHtml(x.label, `${fmt.format(x.mensual)} mensual ÷ 30`, x.integrado)).join('')}
+      <div class="ledger-subtotal"><span>Salario diario integrado${!cfg.indemniza ? ' (informativo: sin indemnización en esta separación)' : (usarSDI ? '' : ` (no aplicado: indemnización con ${baseIndemNombre})`)}</span><span class="amt">${fmt.format(sdi)}</span></div>
     </div>`;
 
     html += `<div class="ledger-group">
       <p class="ledger-label">Finiquito</p>
       ${lineHtml('Salarios pendientes', `${fmtNum(salarioDiario,2)} × ${fmtNum(diasPendientes,1)} d`, salariosPendientes)}
-      ${lineHtml('Aguinaldo proporcional', `${fmtNum(aguinaldoDias,2)} d · ${fmtNum(aguinaldoDiasAnio,0)} d/año desde 1-ene o ingreso`, aguinaldoMonto)}
-      ${lineHtml('Vacaciones proporcionales', `${fmtNum(vacacionesDias,2)} d · ${diasVacLey}${vacacionesAdicionales ? ` + ${vacacionesAdicionales}` : ''} d/año desde aniversario`, vacacionesMonto)}
+      ${lineHtml('Aguinaldo proporcional', `${fmtNum(salarioOrdinario,2)} × ${fmtNum(aguinaldoDias,2)} d · ${fmtNum(aguinaldoDiasAnio,0)} d/año desde 1-ene o ingreso`, aguinaldoMonto)}
+      ${lineHtml('Vacaciones proporcionales', `${fmtNum(salarioOrdinario,2)} × ${fmtNum(vacacionesDias,2)} d · ${diasVacLey}${vacacionesAdicionales ? ` + ${vacacionesAdicionales}` : ''} d/año desde aniversario`, vacacionesMonto)}
       ${lineHtml(`Prima vacacional (${fmtNum(primaPct,0)}%)`, 'sobre vacaciones proporcionales', primaVacacionalMonto)}
-      ${vacacionesPendientesDias > 0 ? lineHtml('Vacaciones pendientes (años anteriores)', `${fmtNum(salarioDiario,2)} × ${fmtNum(vacacionesPendientesDias,1)} d`, vacacionesPendientesMonto) : ''}
-      ${primaVacacionalPendienteDias > 0 ? lineHtml(`Prima vacacional pendiente (${fmtNum(primaPct,0)}%)`, `${fmtNum(salarioDiario,2)} × ${fmtNum(primaVacacionalPendienteDias,1)} d × ${fmtNum(primaPct,0)}%`, primaVacacionalPendienteMonto) : ''}
-      ${gratificacionDias > 0 ? lineHtml('Gratificación', `${fmtNum(salarioDiario,2)} × ${fmtNum(gratificacionDias,1)} d (no exigida por LFT)`, gratificacionMonto) : ''}
+      ${vacacionesPendientesDias > 0 ? lineHtml('Vacaciones pendientes (años anteriores)', `${fmtNum(salarioOrdinario,2)} × ${fmtNum(vacacionesPendientesDias,1)} d`, vacacionesPendientesMonto) : ''}
+      ${primaVacacionalPendienteDias > 0 ? lineHtml(`Prima vacacional pendiente (${fmtNum(primaPct,0)}%)`, `${fmtNum(salarioOrdinario,2)} × ${fmtNum(primaVacacionalPendienteDias,1)} d × ${fmtNum(primaPct,0)}%`, primaVacacionalPendienteMonto) : ''}
+      ${gratificacionDias > 0 ? lineHtml('Gratificación', `${fmtNum(salarioOrdinario,2)} × ${fmtNum(gratificacionDias,1)} d (no exigida por LFT)`, gratificacionMonto) : ''}
       <div class="ledger-subtotal"><span>Sub-total finiquito</span><span class="amt">${fmt.format(subtotalFiniquito)}</span></div>
     </div>`;
 
@@ -1218,7 +1258,7 @@ window.LORA_TTF = {
 
     if (cfg.indemniza) {
       html += `<div class="ledger-group">
-        <p class="ledger-label">Indemnización · base ${usarSDI ? 'salario diario integrado' : 'cuota diaria'} ${fmt.format(baseIndem)}</p>
+        <p class="ledger-label">Indemnización · base ${baseIndemNombre} ${fmt.format(baseIndem)}</p>
         ${lineHtml(`Constitucional — ${diasConstitucional} días fijos${esRecorte ? ' (recorte de personal)' : ''}`, `${baseIndemTxt} ${fmtNum(baseIndem,2)} × ${diasConstitucional} d`, indemnizacionConstitucional)}
         ${aplicaDias20 ? lineHtml(laboralDesc, laboralFormula, indemnizacionLaboral) : ''}
         ${fechaPago && fechaPago > end
@@ -1231,12 +1271,12 @@ window.LORA_TTF = {
 
     const propuestaPrimaAntiguedadAplica = aniosCompletos >= 15;
     propuestaBase = {
-      salarioDiario,
+      salarioDiario: salarioOrdinario,
       finiquitoBase: subtotalFiniquito + subtotalAdeudos + (propuestaPrimaAntiguedadAplica ? primaAntiguedadMonto : 0),
       primaAntiguedadAplica: propuestaPrimaAntiguedadAplica,
       conAdeudos: subtotalAdeudos > 0,
     };
-    const notaProp = `Finiquito${subtotalAdeudos > 0 ? ' + adeudos' : ''}${propuestaPrimaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación (cuota diaria), en lugar de indemnización.`;
+    const notaProp = `Finiquito${subtotalAdeudos > 0 ? ' + adeudos' : ''}${propuestaPrimaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación (${hayOrdinario ? 'salario ordinario' : 'cuota diaria'} ${fmt.format(salarioOrdinario)}), en lugar de indemnización.`;
     propuestaBase.nota = notaProp;
     html += `<div class="propuestas-card">
       <p class="ledger-label">Propuestas de negociación</p>
@@ -1261,6 +1301,7 @@ window.LORA_TTF = {
       fechaIngreso: ingresoVal,
       fechaSeparacion: bajaVal,
       salarioDiario: fmt.format(salarioDiario),
+      salarioOrdinario: hayOrdinario ? fmt.format(salarioOrdinario) : '',
       sdi: `${fmt.format(sdi)} (factor ${fmtNum(factorIntegracion,4)})`,
       antiguedad: `${fmtNum(aniosDecimal,2)} años (${totalDiasServicio} días)`,
       tipoDocLabel,
@@ -1289,7 +1330,7 @@ window.LORA_TTF = {
       rows.push({ type: 'subtotal', label: 'Sub-total liquidación', amt: fmt.format(subtotalFiniquito + subtotalAdeudos + primaAntiguedadMonto) });
     }
     if (cfg.indemniza) {
-      rows.push({ type: 'section', text: `Indemnización (base ${usarSDI ? 'SDI' : 'cuota diaria'} ${fmt.format(baseIndem)})` });
+      rows.push({ type: 'section', text: `Indemnización (base ${usarSDI ? 'SDI' : baseIndemNombre} ${fmt.format(baseIndem)})` });
       rows.push({ type: 'line', label: `Constitucional (${diasConstitucional} días${esRecorte ? ', recorte de personal' : ''})`, amt: fmt.format(indemnizacionConstitucional) });
       if (aplicaDias20) rows.push({ type: 'line', label: laboralDesc, amt: fmt.format(indemnizacionLaboral) });
       if (fechaPago && fechaPago > end) rows.push({ type: 'line', label: `Salarios vencidos (${diasVencidosTope} d)`, amt: fmt.format(salariosVencidosMonto) });
@@ -1401,6 +1442,7 @@ window.LORA_TTF = {
       drawLabelValue(col2X + col2SubGap, r2, 'Antigüedad', resumenDatos.antiguedad);
       const r3 = r2 + s(30);
       drawLabelValue(col2X, r3, 'Salario diario integrado', resumenDatos.sdi, goldAccent);
+      if (resumenDatos.salarioOrdinario) drawLabelValue(col2X + col2SubGap, r3, 'Salario ordinario', resumenDatos.salarioOrdinario, goldAccent);
 
       y = r3 + s(26);
       if (draw) { doc.setDrawColor(17, 17, 17); doc.setLineWidth(1); doc.line(marginX, y, rightX, y); }
