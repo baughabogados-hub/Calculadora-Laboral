@@ -526,6 +526,24 @@
     border-radius: 7px; padding: 8px 10px; margin: 0 0 14px;
   }
   .badge-int { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); margin-left: 6px; }
+  /* ISR: tabla de exento / gravado que cabe en el ancho sin barra horizontal */
+  .isr-box { margin-top: 18px; }
+  .isr-tabla { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; margin-bottom: 8px; }
+  .isr-tabla th { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; text-align: right; padding: 4px 3px; border-bottom: 1px solid var(--line); }
+  .isr-tabla td { text-align: right; padding: 6px 3px; border-bottom: 1px dotted var(--line); overflow-wrap: anywhere; vertical-align: top; }
+  .isr-tabla th:first-child, .isr-tabla td:first-child { text-align: left; width: 37%; }
+  .isr-tabla td small { display: block; font-size: 10.5px; color: var(--ink-faint); }
+  .isr-tabla tr.isr-suma td { font-weight: 700; border-bottom: 0; border-top: 1px solid var(--ink); }
+  .isr-nota { font-size: 11.5px; color: var(--ink-faint); margin: 0 0 6px; line-height: 1.45; }
+  .total-row.neto-row { margin-top: 10px; }
+  .isr-tabla td:not(:first-child) { white-space: nowrap; overflow-wrap: normal; }
+  @media (max-width: 560px) {
+    .isr-tabla { font-size: 10.5px; }
+    .isr-tabla th { font-size: 8.5px; letter-spacing: 0.02em; }
+    .isr-tabla th, .isr-tabla td { padding-left: 1px; padding-right: 1px; }
+    .isr-tabla th:first-child, .isr-tabla td:first-child { width: 28%; }
+    .isr-tabla td small { font-size: 9.5px; }
+  }
 
   @media (max-width: 560px) {
     .group-body { grid-template-columns: 1fr; }
@@ -728,6 +746,31 @@
         </div>
       </details>
 
+      <!-- ===== ISR (solo versión Baugh) ===== -->
+      <details class="group" id="grpIsr" open>
+        <summary><span><span class="chev">›</span> ISR y neto a recibir</span><span class="art">Arts. 93, 95 y 96 LISR</span></summary>
+        <div class="group-body">
+          <div class="field full checkbox-field">
+            <label class="checkbox-label">
+              <input type="checkbox" id="calcularIsr" checked>
+              <span>Calcular el ISR a retener y el neto que recibe el trabajador</span>
+            </label>
+          </div>
+          <div class="field">
+            <label for="vencidosIsr">Salarios vencidos para ISR <span class="hint">(la ley no es clara)</span></label>
+            <select id="vencidosIsr">
+              <option value="separacion" selected>Como pago por separación (Arts. 93-XIII y 95)</option>
+              <option value="salario">Como salario del mes (Art. 96)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="umaDiaria">UMA diaria <span class="hint">(2026: 117.31)</span></label>
+            <input type="number" id="umaDiaria" min="0" step="0.01" value="117.31">
+          </div>
+          <p class="group-note full">Exentos: aguinaldo hasta 30 UMA, prima vacacional hasta 15 UMA, prima dominical hasta 1 UMA por domingo, horas dobles y descansos laborados al 50% con tope de 5 UMA por semana (100% a salario mínimo) y devolución de caja de ahorro. Indemnizaciones, prima de antigüedad y gratificación por separación: exentas hasta 90 UMA por año de servicio; lo que exceda grava con la tasa del último sueldo mensual ordinario (Art. 95) o, si es menor a ese sueldo, se suma a los ingresos del mes. El finiquito se grava con la tarifa mensual del Art. 96 como un pago del mes.</p>
+        </div>
+      </details>
+
       <div class="actions">
         <button type="submit">Calcular finiquito</button>
         <span class="note">Todos los campos se recalculan al instante.</span>
@@ -745,7 +788,7 @@
     </div>
   </div>
 
-  <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario (cuota diaria) se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo (días por año capturados, mínimo legal 15, Art. 87) y las vacaciones (tabla del Art. 76 más los días adicionales capturados) se prorratean por días transcurridos desde el 1 de enero / desde el último aniversario, con base de 365 días, sobre el salario ordinario (cuota diaria más las percepciones marcadas como «Ordinario»; jurisprudencia de la 4a. Sala «AGUINALDO. SALARIO BASE PARA LA CUANTIFICACIÓN DEL»); la prima vacacional usa el porcentaje capturado (mínimo legal 25%, Art. 80). Horas extras: valor de la hora = cuota diaria ÷ horas de jornada; dobles al 200% (Art. 67) y triples al 300% (Art. 68). Descanso semanal y obligatorio laborados: dos salarios adicionales (Arts. 73 y 75); prima dominical 25% (Art. 71). El salario diario integrado (SDI) suma al salario ordinario la parte proporcional diaria del aguinaldo y de la prima vacacional, más el promedio mensual ÷ 30 de cada percepción marcada como «Integra» (Arts. 84 y 89). Si está activo el tope, los premios de puntualidad y asistencia integran solo lo que cada uno exceda del 10% del salario base de cotización (Art. 27-VII LSS); el Art. 84 LFT no prevé esa exclusión, por lo que en juicio podría integrarse el premio completo. Si una percepción integra o no es cuestión del caso: conforme a la tesis II.T.298 L, integra la que se entrega a cambio del trabajo, de forma ordinaria y permanente, aunque sea variable; la tesis aislada III.5o.T.9 L (10a.), registro 2022757, respeta la cláusula contractual que excluye expresamente una prestación extralegal del salario integrado. Las exclusiones del Art. 27 de la Ley del Seguro Social (despensa, premios de puntualidad y asistencia, fondo de ahorro) rigen para el salario base de cotización, no para la LFT. El saldo de caja o fondo de ahorro (Art. 110-IV) se devuelve al trabajador y no es indemnización. La prima de antigüedad (Arts. 162 y 486) usa la cuota diaria, acotada entre una y dos veces el salario mínimo capturado. La indemnización se separa en Constitucional (90 días fijos, 120 si es recorte de personal, Art. 439); Laboral (Art. 50, solo en rescisión imputable al patrón —Arts. 51/52—, negativa a reinstalar, insumisión al arbitraje o recorte), a 20 días por año en contrato indeterminado (50-II) o conforme al 50-I en contrato determinado; y Salarios vencidos (Arts. 48 y 50-III), de la fecha de baja a la de pago, con tope de 12 meses, sin intereses moratorios. Las tres usan el SDI salvo que se desmarque la opción. No calcula ISR ni retenciones. No sustituye la revisión de contrato colectivo, reglamentos, prácticas de la empresa ni las condiciones particulares del caso.</p>
+  <p class="disclaimer">Herramienta de referencia rápida para trabajo interno del despacho. El salario diario (cuota diaria) se obtiene dividiendo el monto capturado entre 30 (mensual), 15 (quincenal) o 7 (semanal), o se toma directo si es diario. Las fechas usan formato DD/MM/AA; los años 00–30 se interpretan como 2000–2030 y 31–99 como 1931–1999. El aguinaldo (días por año capturados, mínimo legal 15, Art. 87) y las vacaciones (tabla del Art. 76 más los días adicionales capturados) se prorratean por días transcurridos desde el 1 de enero / desde el último aniversario, con base de 365 días, sobre el salario ordinario (cuota diaria más las percepciones marcadas como «Ordinario»; jurisprudencia de la 4a. Sala «AGUINALDO. SALARIO BASE PARA LA CUANTIFICACIÓN DEL»); la prima vacacional usa el porcentaje capturado (mínimo legal 25%, Art. 80). Horas extras: valor de la hora = cuota diaria ÷ horas de jornada; dobles al 200% (Art. 67) y triples al 300% (Art. 68). Descanso semanal y obligatorio laborados: dos salarios adicionales (Arts. 73 y 75); prima dominical 25% (Art. 71). El salario diario integrado (SDI) suma al salario ordinario la parte proporcional diaria del aguinaldo y de la prima vacacional, más el promedio mensual ÷ 30 de cada percepción marcada como «Integra» (Arts. 84 y 89). Si está activo el tope, los premios de puntualidad y asistencia integran solo lo que cada uno exceda del 10% del salario base de cotización (Art. 27-VII LSS); el Art. 84 LFT no prevé esa exclusión, por lo que en juicio podría integrarse el premio completo. Si una percepción integra o no es cuestión del caso: conforme a la tesis II.T.298 L, integra la que se entrega a cambio del trabajo, de forma ordinaria y permanente, aunque sea variable; la tesis aislada III.5o.T.9 L (10a.), registro 2022757, respeta la cláusula contractual que excluye expresamente una prestación extralegal del salario integrado. Las exclusiones del Art. 27 de la Ley del Seguro Social (despensa, premios de puntualidad y asistencia, fondo de ahorro) rigen para el salario base de cotización, no para la LFT. El saldo de caja o fondo de ahorro (Art. 110-IV) se devuelve al trabajador y no es indemnización. La prima de antigüedad (Arts. 162 y 486) usa la cuota diaria, acotada entre una y dos veces el salario mínimo capturado. La indemnización se separa en Constitucional (90 días fijos, 120 si es recorte de personal, Art. 439); Laboral (Art. 50, solo en rescisión imputable al patrón —Arts. 51/52—, negativa a reinstalar, insumisión al arbitraje o recorte), a 20 días por año en contrato indeterminado (50-II) o conforme al 50-I en contrato determinado; y Salarios vencidos (Arts. 48 y 50-III), de la fecha de baja a la de pago, con tope de 12 meses, sin intereses moratorios. Las tres usan el SDI salvo que se desmarque la opción. ISR (Arts. 93, 95 y 96 LISR, tarifa mensual 2026): el finiquito y los adeudos se gravan con la tarifa mensual del Art. 96 como un solo pago del mes, sin sumar otros sueldos del mes ni aplicar subsidio al empleo; exentan el aguinaldo hasta 30 UMA, la prima vacacional hasta 15 UMA, la prima dominical hasta 1 UMA por domingo, el tiempo extra doble y los descansos laborados al 50% con tope de 5 UMA por semana (se toman las semanas mínimas posibles; 100% si el salario es el mínimo) y la devolución de la caja de ahorro. Las indemnizaciones, la prima de antigüedad y la gratificación por separación exentan hasta 90 UMA por año de servicio (la fracción de más de seis meses cuenta como año); el excedente se grava con la tasa que resulta de dividir el ISR del último sueldo mensual ordinario (salario ordinario × 30) entre ese sueldo o, si es menor a ese sueldo, se suma a los ingresos del mes (Art. 95). Los salarios vencidos se tratan como pago por separación o como salario, según la opción elegida. Es una estimación de la retención, no del impuesto anual. No sustituye la revisión de contrato colectivo, reglamentos, prácticas de la empresa ni las condiciones particulares del caso.</p>
 
   <p class="contacto legal-links"><a href="/baugh/estadisticas">Estadísticas de uso</a> · <a href="/privacidad">Aviso de privacidad</a></p>
 </div>
@@ -997,6 +1040,56 @@ window.LORA_TTF = {
   const lineHtml = (desc, formula, amt, extra) =>
     `<div class="line"><span class="desc">${desc}${extra || ''}</span><span class="formula">${formula}</span><span class="amt">${typeof amt === 'number' ? fmt.format(amt) : amt}</span></div>`;
 
+  // --- ISR (Arts. 93, 95 y 96 LISR) ---
+  // Tarifa mensual del Art. 96 para 2026 (Anexo 8 RMF): [límite inferior, cuota fija, % sobre excedente]
+  const TARIFA_96_MENSUAL = [[0.01,0,.0192],[844.6,16.22,.064],[7168.52,420.95,.1088],[12598.03,1011.68,.16],[14644.65,1339.14,.1792],
+    [17533.65,1856.84,.2136],[35362.84,5665.16,.2352],[55736.69,10457.09,.30],[106410.51,25659.23,.32],
+    [141880.67,37009.69,.34],[425642,133488.54,.35]];
+  const r2 = (n) => Math.round(n * 100) / 100;
+  function tarifa96(base) {
+    if (base <= 0) return 0;
+    let fila = TARIFA_96_MENSUAL[0];
+    for (const f of TARIFA_96_MENSUAL) if (base >= f[0]) fila = f;
+    return r2((base - fila[0]) * fila[2] + fila[1]);
+  }
+
+  // conceptos: [{ label, importe, exento, grupo: 'ord' | 'sep' }]. Los de separación comparten
+  // la exención de 90 UMA por año de servicio (Art. 93-XIII) y se gravan conforme al Art. 95:
+  // si lo gravado es menor al último sueldo mensual ordinario se suma a los ingresos del mes;
+  // si no, se le aplica la tasa que resulta de dividir el ISR de ese sueldo entre el sueldo.
+  function calcularIsr(conceptos, { uma, aniosExencion, sueldoMensual }) {
+    const filas = conceptos.filter((c) => c.importe > 0.004).map((c) => {
+      const importe = r2(c.importe);
+      return Object.assign({}, c, { importe, exento: c.grupo === 'sep' ? 0 : r2(Math.min(Math.max(c.exento || 0, 0), importe)) });
+    });
+    const sep = filas.filter((c) => c.grupo === 'sep');
+    const totalSep = sep.reduce((s, c) => s + c.importe, 0);
+    const topeSep = 90 * uma * aniosExencion;
+    const exentoSep = Math.min(totalSep, topeSep);
+    sep.forEach((c) => { c.exento = totalSep > 0 ? r2(exentoSep * c.importe / totalSep) : 0; });
+    filas.forEach((c) => { c.gravado = r2(c.importe - c.exento); });
+    const suma = (arr, k) => r2(arr.reduce((s, c) => s + c[k], 0));
+    const gravadoOrd = suma(filas.filter((c) => c.grupo === 'ord'), 'gravado');
+    const gravadoSep = suma(sep, 'gravado');
+    const isrOrd = tarifa96(gravadoOrd);
+    let isrSep = 0, tasa = null, sepSumadoAlMes = false;
+    if (gravadoSep > 0) {
+      if (gravadoSep < sueldoMensual) {
+        sepSumadoAlMes = true;
+        isrSep = r2(tarifa96(gravadoOrd + gravadoSep) - isrOrd);
+      } else {
+        tasa = sueldoMensual > 0 ? tarifa96(sueldoMensual) / sueldoMensual : 0;
+        isrSep = r2(gravadoSep * tasa);
+      }
+    }
+    return {
+      filas, gravadoOrd, gravadoSep, totalSep: r2(totalSep), topeSep: r2(topeSep), aniosExencion, sueldoMensual,
+      importe: suma(filas, 'importe'), exento: suma(filas, 'exento'), gravado: suma(filas, 'gravado'),
+      isrOrd, isrSep, tasa, sepSumadoAlMes, isr: r2(isrOrd + isrSep),
+    };
+  }
+  window.CalculoIsrBaugh = { tarifa96, calcularIsr };
+
   function calcular() {
     const nombreTrabajador = $('nombreTrabajador').value.trim();
     const ingresoVal = $('ingreso').value;
@@ -1081,11 +1174,11 @@ window.LORA_TTF = {
     const horasDobles = num('horasDobles'), horasTriples = num('horasTriples');
     const descansos = num('descansosLaborados'), festivos = num('festivosLaborados'), domingos = num('domingosPrima');
     const adeudos = [];
-    if (horasDobles > 0) adeudos.push({ desc: 'Horas extras dobles (Art. 67)', formula: `${fmtNum(valorHora,2)}/h × 2 × ${fmtNum(horasDobles,1)} h`, amt: valorHora * 2 * horasDobles, pdf: `Horas extras dobles (${fmtNum(horasDobles,1)} h)` });
-    if (horasTriples > 0) adeudos.push({ desc: 'Horas extras triples (Art. 68)', formula: `${fmtNum(valorHora,2)}/h × 3 × ${fmtNum(horasTriples,1)} h`, amt: valorHora * 3 * horasTriples, pdf: `Horas extras triples (${fmtNum(horasTriples,1)} h)` });
-    if (descansos > 0) adeudos.push({ desc: 'Descanso semanal laborado (Art. 73)', formula: `${fmtNum(salarioDiario,2)} × 2 × ${descansos} d`, amt: salarioDiario * 2 * descansos, pdf: `Descanso semanal laborado (${descansos} d × 2)` });
-    if (festivos > 0) adeudos.push({ desc: 'Descanso obligatorio laborado (Art. 75)', formula: `${fmtNum(salarioDiario,2)} × 2 × ${festivos} d`, amt: salarioDiario * 2 * festivos, pdf: `Descanso obligatorio laborado (${festivos} d × 2)` });
-    if (domingos > 0) adeudos.push({ desc: 'Prima dominical (Art. 71)', formula: `${fmtNum(salarioDiario,2)} × 25% × ${domingos} domingos`, amt: salarioDiario * 0.25 * domingos, pdf: `Prima dominical (${domingos} domingos)` });
+    if (horasDobles > 0) adeudos.push({ desc: 'Horas extras dobles (Art. 67)', formula: `${fmtNum(valorHora,2)}/h × 2 × ${fmtNum(horasDobles,1)} h`, amt: valorHora * 2 * horasDobles, isr: 'extra', pdf: `Horas extras dobles (${fmtNum(horasDobles,1)} h)` });
+    if (horasTriples > 0) adeudos.push({ desc: 'Horas extras triples (Art. 68)', formula: `${fmtNum(valorHora,2)}/h × 3 × ${fmtNum(horasTriples,1)} h`, amt: valorHora * 3 * horasTriples, isr: 'gravado', pdf: `Horas extras triples (${fmtNum(horasTriples,1)} h)` });
+    if (descansos > 0) adeudos.push({ desc: 'Descanso semanal laborado (Art. 73)', formula: `${fmtNum(salarioDiario,2)} × 2 × ${descansos} d`, amt: salarioDiario * 2 * descansos, isr: 'extra', pdf: `Descanso semanal laborado (${descansos} d × 2)` });
+    if (festivos > 0) adeudos.push({ desc: 'Descanso obligatorio laborado (Art. 75)', formula: `${fmtNum(salarioDiario,2)} × 2 × ${festivos} d`, amt: salarioDiario * 2 * festivos, isr: 'extra', pdf: `Descanso obligatorio laborado (${festivos} d × 2)` });
+    if (domingos > 0) adeudos.push({ desc: 'Prima dominical (Art. 71)', formula: `${fmtNum(salarioDiario,2)} × 25% × ${domingos} domingos`, amt: salarioDiario * 0.25 * domingos, isr: 'dominical', pdf: `Prima dominical (${domingos} domingos)` });
 
     // Percepciones fijas
     const integrables = [];
@@ -1095,12 +1188,12 @@ window.LORA_TTF = {
       const integra = $(`${p.id}Integra`).checked && !$(`${p.id}Ordinario`).checked;
       if (pend > 0) {
         const d = p.id === 'caja' ? 'Caja / fondo de ahorro — saldo a devolver' : `${p.label} pendientes`;
-        adeudos.push({ desc: d, formula: p.id === 'caja' ? 'aportaciones + rendimientos (Art. 110-IV)' : 'monto adeudado a la baja', amt: pend, pdf: d });
+        adeudos.push({ desc: d, formula: p.id === 'caja' ? 'aportaciones + rendimientos (Art. 110-IV)' : 'monto adeudado a la baja', amt: pend, isr: p.id === 'caja' ? 'caja' : 'gravado', pdf: d });
       }
       if (integra && mensual > 0) integrables.push({ label: p.id === 'caja' ? 'Caja de ahorro (aportación patronal)' : p.label, mensual, topeLss: !!p.topeLss });
     });
     leerOtras().forEach((o) => {
-      if (o.pendiente > 0) adeudos.push({ desc: `${esc(o.concepto)} pendiente`, formula: 'prestación extralegal', amt: o.pendiente, pdf: `${o.concepto} (pendiente)` });
+      if (o.pendiente > 0) adeudos.push({ desc: `${esc(o.concepto)} pendiente`, formula: 'prestación extralegal', amt: o.pendiente, isr: 'gravado', pdf: `${o.concepto} (pendiente)` });
       if (o.integra && !o.ordinario && o.mensual > 0) integrables.push({ label: esc(o.concepto), mensual: o.mensual });
     });
     const subtotalAdeudos = adeudos.reduce((s, a) => s + a.amt, 0);
@@ -1173,6 +1266,41 @@ window.LORA_TTF = {
     }
 
     const totalGeneral = subtotalFiniquito + subtotalAdeudos + primaAntiguedadMonto + indemnizacionConstitucional + indemnizacionLaboral + salariosVencidosMonto;
+
+    // --- ISR a retener (versión Baugh) ---
+    let isr = null;
+    if ($('calcularIsr').checked) {
+      const uma = num('umaDiaria') || 117.31;
+      const vencidosComoSep = $('vencidosIsr').value === 'separacion';
+      const enMinimo = salarioDiario <= salarioMinimo + 0.005;
+      const sumaAdeudos = (tipoIsr) => adeudos.filter((a) => a.isr === tipoIsr).reduce((s, a) => s + a.amt, 0);
+      // Tiempo extra doble y descansos laborados: exento el 50% con tope de 5 UMA por semana; 100% a salario mínimo (Art. 93-I).
+      // Como no se captura por semana, se toman las semanas mínimas posibles: 9 horas dobles por semana y un descanso semanal por semana.
+      const tiempoExtra = sumaAdeudos('extra');
+      const semanasExtra = Math.max(Math.ceil(horasDobles / 9), descansos, 1);
+      const exentoExtra = enMinimo ? tiempoExtra : Math.min(tiempoExtra * 0.5, 5 * uma * semanasExtra);
+      const { y: aY, m: aM, d: aD } = antiguedadYMD(start, end);
+      const aniosExencion = aY + ((aM > 6 || (aM === 6 && aD > 0)) ? 1 : 0);   // fracción de más de 6 meses cuenta como año
+      isr = calcularIsr([
+        { label: 'Salarios pendientes', importe: salariosPendientes, exento: 0, grupo: 'ord' },
+        { label: 'Aguinaldo', importe: aguinaldoMonto, exento: 30 * uma, grupo: 'ord', nota: 'exento hasta 30 UMA' },
+        { label: 'Vacaciones', importe: vacacionesMonto + vacacionesPendientesMonto, exento: 0, grupo: 'ord' },
+        { label: 'Prima vacacional', importe: primaVacacionalMonto + primaVacacionalPendienteMonto, exento: 15 * uma, grupo: 'ord', nota: 'exenta hasta 15 UMA' },
+        { label: 'Horas extras dobles y descansos laborados', importe: tiempoExtra, exento: exentoExtra, grupo: 'ord',
+          nota: enMinimo ? 'exento: salario mínimo' : `50% exento, tope 5 UMA × ${semanasExtra} sem.` },
+        { label: 'Prima dominical', importe: sumaAdeudos('dominical'), exento: uma * domingos, grupo: 'ord', nota: 'exenta hasta 1 UMA por domingo' },
+        { label: 'Horas triples y otras percepciones pendientes', importe: sumaAdeudos('gravado'), exento: 0, grupo: 'ord' },
+        { label: 'Caja / fondo de ahorro (devolución)', importe: sumaAdeudos('caja'), exento: Infinity, grupo: 'ord', nota: 'exento (Art. 93-XI)' },
+        { label: 'Salarios vencidos', importe: vencidosComoSep ? 0 : salariosVencidosMonto, exento: 0, grupo: 'ord', nota: 'como salario (Art. 96)' },
+        { label: 'Gratificación por separación', importe: gratificacionMonto, grupo: 'sep' },
+        { label: 'Prima de antigüedad', importe: primaAntiguedadMonto, grupo: 'sep' },
+        { label: 'Indemnización constitucional', importe: indemnizacionConstitucional, grupo: 'sep' },
+        { label: 'Indemnización de 20 días por año', importe: indemnizacionLaboral, grupo: 'sep' },
+        { label: 'Salarios vencidos', importe: vencidosComoSep ? salariosVencidosMonto : 0, grupo: 'sep' },
+      ], { uma, aniosExencion, sueldoMensual: r2(salarioOrdinario * 30) });
+      isr.uma = uma;
+      isr.neto = r2(totalGeneral - isr.isr);
+    }
 
     const tipoLabel = cfg.label;
     const tipoDocLabel = nombreTipoDocumento(tipo);
@@ -1267,7 +1395,30 @@ window.LORA_TTF = {
       </div>`;
     }
 
-    html += `<div class="total-row"><span class="label">Total a pagar</span><span class="amt">${fmt.format(totalGeneral)}</span></div>`;
+    html += `<div class="total-row"><span class="label">Total a pagar${isr ? ' (bruto)' : ''}</span><span class="amt">${fmt.format(totalGeneral)}</span></div>`;
+
+    if (isr) {
+      const pct = (t) => `${fmtNum(t * 100, 2)}%`;
+      html += `<div class="ledger-group isr-box">
+        <p class="ledger-label">ISR a retener · Arts. 93, 95 y 96 LISR</p>
+        <table class="isr-tabla">
+          <thead><tr><th>Concepto</th><th>Importe</th><th>Exento</th><th>Gravado</th></tr></thead>
+          <tbody>
+            ${isr.filas.map((c) => `<tr><td>${c.label}${c.nota ? `<small>${c.nota}</small>` : ''}${c.grupo === 'sep' ? '<small>pago por separación</small>' : ''}</td>
+              <td>${fmt.format(c.importe)}</td><td>${fmt.format(c.exento)}</td><td>${fmt.format(c.gravado)}</td></tr>`).join('')}
+            <tr class="isr-suma"><td>Total</td><td>${fmt.format(isr.importe)}</td><td>${fmt.format(isr.exento)}</td><td>${fmt.format(isr.gravado)}</td></tr>
+          </tbody>
+        </table>
+        ${isr.totalSep > 0 ? `<p class="isr-nota">Exención por separación: 90 UMA × ${isr.aniosExencion} ${isr.aniosExencion === 1 ? 'año' : 'años'} de servicio = ${fmt.format(isr.topeSep)} (Art. 93-XIII; la fracción de más de seis meses cuenta como año). UMA diaria ${fmt.format(isr.uma)}.</p>` : ''}
+        ${lineHtml('ISR finiquito y adeudos (Art. 96)', `tarifa mensual sobre ${fmt.format(isr.gravadoOrd)} gravado`, isr.isrOrd)}
+        ${isr.gravadoSep > 0 ? (isr.sepSumadoAlMes
+          ? lineHtml('ISR pagos por separación (Art. 95)', `gravado ${fmt.format(isr.gravadoSep)} menor al último sueldo mensual ordinario ${fmt.format(isr.sueldoMensual)}: se suma a los ingresos del mes`, isr.isrSep)
+          : lineHtml('ISR pagos por separación (Art. 95)', `${fmt.format(isr.gravadoSep)} × tasa ${pct(isr.tasa)} (ISR de ${fmt.format(isr.sueldoMensual)} ÷ último sueldo mensual ordinario)`, isr.isrSep))
+          : (isr.totalSep > 0 ? lineHtml('ISR pagos por separación (Art. 95)', 'todo queda dentro de la exención', 0) : '')}
+        <div class="ledger-subtotal"><span>ISR a retener</span><span class="amt">${fmt.format(isr.isr)}</span></div>
+      </div>
+      <div class="total-row neto-row"><span class="label">Neto a recibir</span><span class="amt">${fmt.format(isr.neto)}</span></div>`;
+    }
 
     const propuestaPrimaAntiguedadAplica = aniosCompletos >= 15;
     propuestaBase = {
@@ -1276,7 +1427,7 @@ window.LORA_TTF = {
       primaAntiguedadAplica: propuestaPrimaAntiguedadAplica,
       conAdeudos: subtotalAdeudos > 0,
     };
-    const notaProp = `Finiquito${subtotalAdeudos > 0 ? ' + adeudos' : ''}${propuestaPrimaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación (${hayOrdinario ? 'salario ordinario' : 'cuota diaria'} ${fmt.format(salarioOrdinario)}), en lugar de indemnización.`;
+    const notaProp = `Finiquito${subtotalAdeudos > 0 ? ' + adeudos' : ''}${propuestaPrimaAntiguedadAplica ? ' + prima de antigüedad' : ''} más días de gratificación (${hayOrdinario ? 'salario ordinario' : 'cuota diaria'} ${fmt.format(salarioOrdinario)}), en lugar de indemnización${isr ? '. Montos brutos, antes de ISR' : ''}.`;
     propuestaBase.nota = notaProp;
     html += `<div class="propuestas-card">
       <p class="ledger-label">Propuestas de negociación</p>
@@ -1335,7 +1486,17 @@ window.LORA_TTF = {
       if (aplicaDias20) rows.push({ type: 'line', label: laboralDesc, amt: fmt.format(indemnizacionLaboral) });
       if (fechaPago && fechaPago > end) rows.push({ type: 'line', label: `Salarios vencidos (${diasVencidosTope} d)`, amt: fmt.format(salariosVencidosMonto) });
     }
-    rows.push({ type: 'total', label: 'Total a pagar', amt: fmt.format(totalGeneral) });
+    rows.push({ type: 'total', label: isr ? 'Total a pagar (bruto)' : 'Total a pagar', amt: fmt.format(totalGeneral) });
+    if (isr) {
+      rows.push({ type: 'section', text: 'ISR a retener (Arts. 93, 95 y 96 LISR)' });
+      rows.push({ type: 'line', label: 'Ingresos exentos', amt: fmt.format(isr.exento) });
+      rows.push({ type: 'line', label: 'Gravado finiquito y adeudos', amt: fmt.format(isr.gravadoOrd) });
+      if (isr.totalSep > 0) rows.push({ type: 'line', label: `Gravado pagos por separación (exención 90 UMA × ${isr.aniosExencion} años: ${fmt.format(isr.topeSep)})`, amt: fmt.format(isr.gravadoSep) });
+      rows.push({ type: 'line', label: 'ISR finiquito y adeudos (Art. 96)', amt: fmt.format(isr.isrOrd) });
+      if (isr.gravadoSep > 0) rows.push({ type: 'line', label: isr.sepSumadoAlMes ? 'ISR pagos por separación (Art. 95, sumado al mes)' : `ISR pagos por separación (Art. 95, tasa ${fmtNum(isr.tasa * 100, 2)}%)`, amt: fmt.format(isr.isrSep) });
+      rows.push({ type: 'subtotal', label: 'ISR a retener', amt: fmt.format(isr.isr) });
+      rows.push({ type: 'total', label: 'Neto a recibir', amt: fmt.format(isr.neto) });
+    }
     resumenRows = rows;
   }
 
@@ -1550,7 +1711,7 @@ window.LORA_TTF = {
     const detalle = resumenRows.map((row) => {
       if (row.type === 'section') return `\n${row.text.toUpperCase()}`;
       if (row.type === 'subtotal') return `  ${row.label.toUpperCase()}: ${row.amt}`;
-      if (row.type === 'total') return `\nTOTAL A PAGAR: ${row.amt}`;
+      if (row.type === 'total') return `\n${row.label.toUpperCase()}: ${row.amt}`;
       return `  ${row.label}: ${row.amt}`;
     });
     const propuestas = ['', 'PROPUESTAS DE NEGOCIACIÓN',
