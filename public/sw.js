@@ -1,7 +1,7 @@
 // Service worker — guarda la calculadora para que abra sin internet.
 // Estrategia: primero red, y si no hay conexión, la copia guardada.
-const CACHE = 'donceles-v1';
-const PRECACHE = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
+const CACHE = 'donceles-v2';
+const PRECACHE = ['/donceles/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 const NO_CACHE = /^\/(baugh|healthz)/;
 
 self.addEventListener('install', (event) => {

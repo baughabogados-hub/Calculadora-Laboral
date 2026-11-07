@@ -380,6 +380,13 @@ app.use('/baugh', express.static(baughDir, {
 }));
 
 // ---------- calculadora pública (Donceles) ----------
+// Vive en /donceles/ para que su app instalada no abarque /baugh/: con alcance
+// "/", Chrome abría la calculadora de Baugh dentro de la ventana de Donceles.
+app.get('/', (req, res) => res.redirect(302, '/donceles/' + req.url.slice(1)));
+app.get('/donceles', (req, res) => res.redirect(301, '/donceles/'));
+app.get('/donceles/', (req, res) => {
+  res.set('Cache-Control', 'no-cache').sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.use(express.static(path.join(__dirname, 'public'), {
   index: 'index.html',
   extensions: ['html'],
