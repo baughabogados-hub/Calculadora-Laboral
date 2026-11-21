@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Folios · Calculadora Baugh</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<link rel="icon" href="/baugh/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --ink: #111111; --ink-soft: #3a3a3a; --ink-faint: #767676;
+    --paper: #f5f5f3; --raised: #ffffff; --line: #dadad6; --chip: #efefec;
+    --bien: #1d6b3a; --mal: #a3261d;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #f2f2f0; --ink-soft: #c8c8c4; --ink-faint: #8e8e8a;
+      --paper: #0f0f0f; --raised: #191919; --line: #333331; --chip: #232322;
+      --bien: #6fcf8f; --mal: #f08a80;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Lora", Georgia, serif; padding: 28px 16px 56px; }
+  .page { max-width: 1000px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 18px; }
+  h1 { font-size: clamp(24px, 4vw, 32px); margin: 0; font-weight: 600; }
+  .sub { color: var(--ink-faint); font-size: 13px; margin: 4px 0 0; }
+  a { color: var(--ink-soft); }
+  .barra { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; font-size: 14px; }
+  .barra input[type=search] { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised); color: var(--ink); min-width: 240px; }
+  .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .kpi { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+  .kpi p { margin: 0; } .kpi .l { font-size: 12px; color: var(--ink-faint); } .kpi .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; background: var(--raised); border: 1px solid var(--line); font-size: 13px; }
+  th, td { padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+  th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); background: var(--chip); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td small { display: block; color: var(--ink-faint); font-size: 11.5px; }
+  td input { font: inherit; width: 108px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); text-align: right; }
+  td input.pct { width: 52px; }
+  .neg { color: var(--mal); } .pos { color: var(--bien); }
+  button.lnk { font: inherit; font-size: 12.5px; background: none; border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; cursor: pointer; color: var(--ink-soft); margin: 0 0 4px; display: block; text-decoration: none; }
+  a.lnk { font-size: 12.5px; border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; display: inline-block; margin-bottom: 4px; text-decoration: none; }
+  tr.detalle td { background: var(--paper); }
+  .det { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 28px; max-width: 760px; }
+  .det div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dotted var(--line); padding: 3px 0; }
+  .det label { display: flex; gap: 6px; align-items: center; flex: 1; }
+  .det .fuera { color: var(--ink-faint); text-decoration: line-through; }
+  .nota { color: var(--ink-faint); font-size: 12.5px; margin-top: 14px; line-height: 1.5; }
+  .vacio { padding: 30px; text-align: center; color: var(--ink-faint); }
+  .estado { font-size: 12px; color: var(--ink-faint); min-height: 1em; }
+  @media (max-width: 760px) { .det { grid-template-columns: 1fr; } td input { width: 90px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>Folios</h1>
+      <p class="sub">Cálculos guardados, pago real, ahorro y honorarios</p>
+    </div>
+    <a href="/baugh/">← Volver a la calculadora</a>
+  </header>
+
+  <div class="barra">
+    <input type="search" id="buscar" placeholder="Buscar folio, patrón o trabajador">
+    <label><input type="checkbox" id="mios"> Solo mis folios</label>
+    <span class="estado" id="estado"></span>
+  </div>
+
+  <div class="resumen" id="resumen"></div>
+  <div id="tabla"><p class="vacio">Cargando…</p></div>
+
+  <p class="nota">
+    <strong>Base del ahorro</strong> = salarios pendientes, aguinaldo, vacaciones y prima vacacional (irrenunciables) + adeudos + prima de antigüedad + indemnización constitucional.
+    Los 20 días por año, los salarios vencidos y la gratificación quedan fuera salvo que se marquen en «Detalle».
+    <strong>Ahorro</strong> = base − pago real. <strong>Honorarios</strong> = porcentaje del ahorro (15% salvo que se cambie en el folio). Los cambios se guardan solos.
+  </p>
+</div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PARTES = [
+    ['salariosPendientes', 'Salarios pendientes'], ['aguinaldo', 'Aguinaldo'], ['vacaciones', 'Vacaciones'],
+    ['primaVacacional', 'Prima vacacional'], ['adeudos', 'Adeudos'], ['primaAntiguedad', 'Prima de antigüedad'],
+    ['indemConstitucional', 'Indemnización constitucional'],
+  ];
+  const OPCIONALES = [['indem20', '20 días por año'], ['vencidos', 'Salarios vencidos'], ['gratificacion', 'Gratificación']];
+  let folios = [], miNombre = '', abiertos = new Set();
+
+  function calc(f) {
+    const m = f.montos || {};
+    let base = PARTES.reduce((s, [k]) => s + (m[k] || 0), 0);
+    OPCIONALES.forEach(([k]) => { if (f.incluir && f.incluir[k]) base += m[k] || 0; });
+    const pago = f.pago == null ? null : f.pago;
+    const ahorro = pago == null ? null : base - pago;
+    const pct = f.honorariosPct == null ? 15 : f.honorariosPct;
+    const honorarios = ahorro == null ? null : Math.max(0, ahorro) * pct / 100;
+    return { base, pago, ahorro, pct, honorarios };
+  }
+
+  function visibles() {
+    const q = $('buscar').value.trim().toLowerCase();
+    return folios.filter((f) => (!$('mios').checked || f.usuario === miNombre)
+      && (!q || [f.folio, f.patron, f.trabajador].some((x) => String(x || '').toLowerCase().includes(q))));
+  }
+
+  function pintar() {
+    const lista = visibles();
+    let sAhorro = 0, sHon = 0, conPago = 0;
+    lista.forEach((f) => { const c = calc(f); if (c.pago != null) { conPago++; sAhorro += c.ahorro; sHon += c.honorarios; } });
+    $('resumen').innerHTML = `
+      <div class="kpi"><p class="l">Folios</p><p class="v">${lista.length}</p></div>
+      <div class="kpi"><p class="l">Con pago capturado</p><p class="v">${conPago}</p></div>
+      <div class="kpi"><p class="l">Ahorro total</p><p class="v">${fmt.format(sAhorro)}</p></div>
+      <div class="kpi"><p class="l">Honorarios</p><p class="v">${fmt.format(sHon)}</p></div>`;
+    if (!lista.length) { $('tabla').innerHTML = `<p class="vacio">${folios.length ? 'Ningún folio coincide con la búsqueda.' : 'Aún no hay folios. Se crean con «Guardar folio» en la calculadora.'}</p>`; return; }
+    $('tabla').innerHTML = `<table>
+      <thead><tr><th>Folio</th><th>Patrón · trabajador</th><th class="n">Total calculado</th><th class="n">Base ahorro</th>
+        <th class="n">Pago real</th><th class="n">Ahorro</th><th class="n">Honorarios</th><th></th></tr></thead>
+      <tbody>${lista.map(fila).join('')}</tbody></table>`;
+  }
+
+  function fila(f) {
+    const c = calc(f), m = f.montos || {};
+    const fecha = new Date(f.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const id = esc(f.folio);
+    let html = `<tr data-folio="${id}">
+      <td><strong>${id}</strong><small>${fecha} · ${esc(f.usuario)}</small></td>
+      <td>${esc(f.patron) || '<span style="color:var(--ink-faint)">sin patrón</span>'}<small>${esc(f.trabajador) || 'sin nombre'} · ${esc(f.tipoLabel || f.tipo)}</small></td>
+      <td class="n">${fmt.format(m.total || 0)}</td>
+      <td class="n">${fmt.format(c.base)}</td>
+      <td class="n"><input type="number" min="0" step="0.01" data-campo="pago" value="${c.pago == null ? '' : c.pago}" placeholder="—" aria-label="Pago real del folio ${id}"></td>
+      <td class="n ${c.ahorro == null ? '' : (c.ahorro < 0 ? 'neg' : 'pos')}">${c.ahorro == null ? '—' : fmt.format(c.ahorro)}</td>
+      <td class="n">${c.honorarios == null ? '—' : fmt.format(c.honorarios)}<small><input class="pct" type="number" min="0" max="100" step="0.5" data-campo="honorariosPct" value="${c.pct}" aria-label="Porcentaje de honorarios del folio ${id}"> %</small></td>
+      <td><button type="button" class="lnk" data-detalle="${id}">${abiertos.has(f.folio) ? 'Ocultar' : 'Detalle'}</button><a class="lnk" href="/baugh/?folio=${encodeURIComponent(f.folio)}">Abrir</a></td>
+    </tr>`;
+    if (abiertos.has(f.folio)) {
+      html += `<tr class="detalle"><td colspan="8"><div class="det">
+        ${PARTES.map(([k, t]) => `<div><span>${t}</span><span>${fmt.format(m[k] || 0)}</span></div>`).join('')}
+        ${OPCIONALES.map(([k, t]) => `<div><label><input type="checkbox" data-incluir="${k}" data-f="${id}" ${f.incluir && f.incluir[k] ? 'checked' : ''}> ${t}</label><span class="${f.incluir && f.incluir[k] ? '' : 'fuera'}">${fmt.format(m[k] || 0)}</span></div>`).join('')}
+        <div><strong>Base del ahorro</strong><strong>${fmt.format(c.base)}</strong></div>
+        <div><span>ISR retenido · neto calculado</span><span>${fmt.format(m.isr || 0)} · ${fmt.format(m.neto || 0)}</span></div>
+      </div></td></tr>`;
+    }
+    return html;
+  }
+
+  async function guardar(folio, cambios) {
+    $('estado').textContent = 'Guardando…';
+    try {
+      const r = await fetch(`/baugh/api/folios/${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cambios) });
+      if (r.status === 401) { location.href = '/baugh/login'; return; }
+      if (!r.ok) throw new Error();
+      const nuevo = await r.json();
+      folios = folios.map((f) => (f.folio === folio ? nuevo : f));
+      $('estado').textContent = 'Guardado';
+      setTimeout(() => { if ($('estado').textContent === 'Guardado') $('estado').textContent = ''; }, 1500);
+    } catch (e) {
+      $('estado').textContent = 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.';
+    }
+    pintar();
+  }
+
+  $('tabla').addEventListener('change', (e) => {
+    const t = e.target;
+    if (t.dataset.incluir) return guardar(t.dataset.f, { incluir: { [t.dataset.incluir]: t.checked } });
+    const tr = t.closest('tr[data-folio]');
+    if (tr && t.dataset.campo) guardar(tr.dataset.folio, { [t.dataset.campo]: t.value === '' ? null : Number(t.value) });
+  });
+  $('tabla').addEventListener('click', (e) => {
+    const id = e.target.dataset && e.target.dataset.detalle;
+    if (!id) return;
+    abiertos.has(id) ? abiertos.delete(id) : abiertos.add(id);
+    pintar();
+  });
+  $('buscar').addEventListener('input', pintar);
+  $('mios').addEventListener('change', pintar);
+
+  Promise.all([
+    fetch('/baugh/api/folios').then((r) => { if (r.status === 401) { location.href = '/baugh/login'; throw new Error('sesión'); } return r.json(); }),
+    fetch('/baugh/session').then((r) => r.json()).catch(() => ({})),
+  ]).then(([lista, s]) => { folios = lista; miNombre = s.name || ''; if (!miNombre) $('mios').parentElement.hidden = true; pintar(); })
+    .catch(() => { $('tabla').innerHTML = '<p class="vacio">No se pudieron cargar los folios.</p>'; });
+})();
+</script>
+</body>
+</html>

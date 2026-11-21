@@ -67,6 +67,9 @@
   .masthead-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .masthead-top .eyebrow { margin: 0 0 8px; }
   a.salir { text-decoration: none; font-size: 12px; padding: 5px 10px; }
+  .masthead-links { display: flex; gap: 8px; }
+  .card-head-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .folio-tag { font-size: 12.5px; font-weight: 700; color: var(--accent-strong); }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -566,7 +569,7 @@
 
   <div class="masthead">
     <img src="/baugh/icons/logo-baugh.png" alt="Baugh Abogados" class="brand-logo" width="110" height="112">
-    <div class="masthead-top"><p class="eyebrow">Baugh Abogados · Referencia de cálculo · Versión ampliada</p><a href="/baugh/logout" id="btnSalir" class="btn-ghost salir" hidden>Cerrar sesión</a></div>
+    <div class="masthead-top"><p class="eyebrow">Baugh Abogados · Referencia de cálculo · Versión ampliada</p><span class="masthead-links"><a href="/baugh/folios" id="btnFolios" class="btn-ghost salir" hidden>Folios</a><a href="/baugh/logout" id="btnSalir" class="btn-ghost salir" hidden>Cerrar sesión</a></span></div>
     <h1>Calculadora de Finiquito Ampliada</h1>
     <p class="sub">Estimación conforme a la Ley Federal del Trabajo con prestaciones superiores a la ley, horas extras, percepciones variables y extralegales, y salario diario integrado (Arts. 84 y 89 LFT) para indemnizaciones.</p>
   </div>
@@ -577,6 +580,10 @@
       <div class="field full">
         <label for="nombreTrabajador">Nombre del trabajador <span class="hint">(opcional)</span></label>
         <input type="text" id="nombreTrabajador" placeholder="Nombre completo" autocomplete="off">
+      </div>
+      <div class="field full">
+        <label for="patron">Patrón <span class="hint">(opcional; se guarda en el folio)</span></label>
+        <input type="text" id="patron" placeholder="Empresa o persona patrona" autocomplete="off">
       </div>
       <div class="field">
         <label for="ingreso">Fecha de ingreso <span class="hint">(DD/MM/AA)</span></label>
@@ -780,7 +787,11 @@
   <div class="card" id="resultCard">
     <div class="card-head">
       <h2><span class="n">02</span> Desglose del pago</h2>
-      <button type="button" id="btnPdf" class="btn-ghost" disabled>Descargar PDF</button>
+      <div class="card-head-btns">
+        <span class="folio-tag" id="folioTag" aria-live="polite"></span>
+        <button type="button" id="btnFolio" class="btn-ghost" disabled hidden>Guardar folio</button>
+        <button type="button" id="btnPdf" class="btn-ghost" disabled>Descargar PDF</button>
+      </div>
     </div>
     <div id="results">
       <p class="empty-state">Completa los datos y presiona «Calcular finiquito» para ver el desglose.</p>
@@ -805,6 +816,8 @@ window.LORA_TTF = {
   const $ = (id) => document.getElementById(id);
   const fmt = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
   let resumenRows = [];
+  let folioActual = null;     // folio guardado que corresponde al cálculo en pantalla
+  let folioDatos = null;      // montos del último cálculo, para guardar el folio
   let resumenDatos = {};
   let propuestaDias = [30, 45, 60];
   let propuestaBase = { salarioDiario: 0, finiquitoBase: 0 };
@@ -848,6 +861,10 @@ window.LORA_TTF = {
   //   'despensa' SDI y SBC solo lo que exceda del 40% de la UMA · 'premio' SDI y SBC solo lo que exceda del 10% del SBC
   //   'no' ninguno · casilla: la regla depende de marcarla (si no, 'no')
   // neto: si se cobra (cuenta para el salario neto) · isr: 'gravado' | 'despensa' (previsión social) | 'extra' (Art. 93-I)
+  // Vales de despensa y premios de puntualidad/asistencia en el SDI (LFT):
+  //   true  = solo lo que exceda del tope del Art. 27 LSS, igual que en el SBC (criterio actual del despacho)
+  //   false = completos (el Art. 84 LFT no prevé ese tope). En el SBC siempre aplica el tope.
+  const SDI_CON_TOPES_LSS = true;
   const PERC = [
     { id: 'comisiones',   label: 'Comisiones', note: 'Salario ordinario; integran al SDI y al SBC (Art. 84)', regla: 'ordinario', neto: true, isr: 'gravado' },
     { id: 'productividad', label: 'Bono de productividad', note: 'Salario ordinario; integra al SDI y al SBC', regla: 'ordinario', neto: true, isr: 'gravado' },
@@ -879,6 +896,16 @@ window.LORA_TTF = {
         ${p.casilla ? `<label class="perc-int"><input type="checkbox" id="${p.id}Casilla" aria-label="${p.label}: ${p.casilla}"><span class="perc-casilla">${p.casilla}</span></label>` : '<span class="na">—</span>'}`;
       tbl.appendChild(row);
     });
+    // Alimentación: no se captura monto; el Art. 32 LSS aumenta el SBC por cada comida gratuita.
+    const alim = document.createElement('div');
+    alim.className = 'perc-row';
+    alim.innerHTML = `
+      <div class="perc-name">Alimentación<small>Solo SBC. Gratuita: +8.33% por comida al día, +25% las tres (Art. 32 LSS). Onerosa (el trabajador paga al menos 20% de la UMA por comida): no integra (Art. 27-V LSS)</small></div>
+      <div><span class="mlabel-in">Comidas al día</span><select id="alimComidas" aria-label="Alimentación: comidas al día">${[0, 1, 2, 3].map((n) => `<option value="${n}">${n === 0 ? 'No se da' : n + (n === 1 ? ' comida' : ' comidas')}</option>`).join('')}</select></div>
+      <div><span class="na">—</span></div>
+      <div><span class="na">—</span></div>
+      <label class="perc-int"><input type="checkbox" id="alimOnerosa" aria-label="Alimentación: onerosa"><span class="perc-casilla">Onerosa</span></label>`;
+    tbl.appendChild(alim);
   }
   renderPercRows();
 
@@ -1119,6 +1146,8 @@ window.LORA_TTF = {
     const jornadaHoras = num('jornadaHoras') || 8;
 
     $('btnPdf').disabled = true;
+    $('btnFolio').disabled = true;
+    folioDatos = null;
 
     if (!ingresoVal || !bajaVal || isNaN(salarioIngresado) || salarioIngresado <= 0) {
       $('results').innerHTML = '<p class="empty-state">Faltan datos: verifica fechas y salario.</p>';
@@ -1220,16 +1249,27 @@ window.LORA_TTF = {
     const topeDespensa = umaSalarios * 0.40;
     const integrables = percepciones.filter((x) => x.regla !== 'ordinario' && x.regla !== 'no');
     integrables.forEach((x) => {
-      if (x.regla === 'despensa') { x.integrado = Math.max(0, x.diario - topeDespensa); x.reglaTxt = `${fmtNum(x.diario,2)} − 40% UMA ${fmtNum(topeDespensa,2)} (Art. 27-VI LSS)`; }
-      else if (x.regla === 'premio') { x.integrado = Math.max(0, x.diario - topePremio); x.reglaTxt = `${fmtNum(x.diario,2)} − 10% SBC ${fmtNum(topePremio,2)} (Art. 27-VII LSS)`; }
-      else { x.integrado = x.diario; x.reglaTxt = 'fuera del límite legal (Art. 27-IX LSS)'; }
+      // Parte que integra al SBC (Art. 27 LSS)
+      if (x.regla === 'despensa') { x.sbc = Math.max(0, x.diario - topeDespensa); x.reglaSbc = `${fmtNum(x.diario,2)} − 40% UMA ${fmtNum(topeDespensa,2)} (Art. 27-VI LSS)`; }
+      else if (x.regla === 'premio') { x.sbc = Math.max(0, x.diario - topePremio); x.reglaSbc = `${fmtNum(x.diario,2)} − 10% SBC ${fmtNum(topePremio,2)} (Art. 27-VII LSS)`; }
+      else { x.sbc = x.diario; x.reglaSbc = 'fuera del límite legal (Art. 27-IX LSS)'; }
+      // Parte que integra al SDI (Arts. 84 y 89 LFT)
+      if (SDI_CON_TOPES_LSS || x.regla === 'excedente') { x.integrado = x.sbc; x.reglaTxt = x.reglaSbc; }
+      else { x.integrado = x.diario; x.reglaTxt = `completo: el Art. 84 LFT no prevé el tope del Art. ${x.regla === 'despensa' ? '27-VI' : '27-VII'} LSS`; }
     });
     const sdi = fijoIntegrado + integrables.reduce((s, x) => s + x.integrado, 0);
     const factorIntegracion = sdi / salarioDiario;
 
-    // --- Salario base de cotización (Art. 27 LSS): mismas partes que el SDI; mínimo 1 salario mínimo y máximo 25 UMA ---
-    const sbc = Math.min(Math.max(sdi, salarioMinimo), 25 * umaSalarios);
-    const sbcAjuste = sbc > sdi + 0.005 ? 'mínimo: 1 salario mínimo' : (sbc < sdi - 0.005 ? 'tope: 25 UMA' : '');
+    // --- Salario base de cotización (Art. 27 LSS): salario ordinario, aguinaldo, prima vacacional y lo que integra con
+    // los topes del Art. 27; la alimentación gratuita lo aumenta (Art. 32); mínimo 1 salario mínimo y máximo 25 UMA ---
+    const sbcPartes = fijoIntegrado + integrables.reduce((s, x) => s + x.sbc, 0);
+    const alimComidas = parseInt($('alimComidas').value, 10) || 0;
+    const alimOnerosa = $('alimOnerosa').checked;
+    const alimFactor = alimComidas > 0 && !alimOnerosa ? (alimComidas >= 3 ? 0.25 : 0.0833 * alimComidas) : 0;
+    const sbcAlimentacion = sbcPartes * alimFactor;
+    const sbcPrevio = sbcPartes + sbcAlimentacion;
+    const sbc = Math.min(Math.max(sbcPrevio, salarioMinimo), 25 * umaSalarios);
+    const sbcAjuste = sbc > sbcPrevio + 0.005 ? 'mínimo: 1 salario mínimo' : (sbc < sbcPrevio - 0.005 ? 'tope: 25 UMA' : '');
 
     // --- Salario neto: sueldo + bonos, vales y demás percepciones del mes − ISR − cuotas IMSS − otros descuentos ---
     const enMinimoSalario = salarioDiario <= salarioMinimo + 0.005;
@@ -1403,8 +1443,10 @@ window.LORA_TTF = {
     </div>
     <div class="sdi-box ledger-group">
       <p class="ledger-label">Salario base de cotización · Art. 27 LSS</p>
-      ${lineHtml('Mismas partes que el salario integrado', 'con los topes del Art. 27 LSS', sdi)}
-      ${sbcAjuste ? lineHtml('Ajuste', sbcAjuste, sbc - sdi) : ''}
+      ${lineHtml('Salario ordinario, aguinaldo y prima vacacional', 'mismas partes fijas que el salario integrado', fijoIntegrado)}
+      ${integrables.map((x) => lineHtml(x.label, `${x.reglaSbc}${x.sbc === 0 ? ' · no rebasa, no integra' : ''}`, x.sbc)).join('')}
+      ${alimComidas > 0 ? lineHtml(`Alimentación (${alimComidas} ${alimComidas === 1 ? 'comida' : 'comidas'} al día)`, alimOnerosa ? 'onerosa: no integra (Art. 27-V LSS)' : `${fmtNum(sbcPartes,2)} × ${alimComidas >= 3 ? '25%' : `8.33% × ${alimComidas}`} (Art. 32 LSS)`, sbcAlimentacion) : ''}
+      ${sbcAjuste ? lineHtml('Ajuste', sbcAjuste, sbc - sbcPrevio) : ''}
       <div class="ledger-subtotal"><span>Salario base de cotización</span><span class="amt">${fmt.format(sbc)}</span></div>
     </div>
     <div class="sdi-box ledger-group">
@@ -1561,9 +1603,83 @@ window.LORA_TTF = {
       rows.push({ type: 'total', label: 'Neto a recibir', amt: fmt.format(isr.neto) });
     }
     resumenRows = rows;
+
+    folioDatos = {
+      tipo, tipoLabel,
+      montos: {
+        salariosPendientes, aguinaldo: aguinaldoMonto,
+        vacaciones: vacacionesMonto + vacacionesPendientesMonto,
+        primaVacacional: primaVacacionalMonto + primaVacacionalPendienteMonto,
+        gratificacion: gratificacionMonto, adeudos: subtotalAdeudos, primaAntiguedad: primaAntiguedadMonto,
+        indemConstitucional: indemnizacionConstitucional, indem20: indemnizacionLaboral, vencidos: salariosVencidosMonto,
+        total: totalGeneral, isr: isr ? isr.isr : 0, neto: isr ? isr.neto : totalGeneral,
+      },
+    };
+    mostrarFolio();
   }
 
-  $('f').addEventListener('submit', function (e) { e.preventDefault(); calcular();
+  // --- Folios: se guardan solo al presionar «Guardar folio»; cualquier cambio en los datos lo desliga ---
+  function mostrarFolio() {
+    $('folioTag').textContent = folioActual ? `Folio ${folioActual}` : '';
+    $('btnFolio').textContent = folioActual ? 'Guardado' : 'Guardar folio';
+    $('btnFolio').disabled = !!folioActual || !folioDatos;
+  }
+  function capturarDatos() {
+    const out = {};
+    $('f').querySelectorAll('input[id], select[id]').forEach((el) => { out[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+    return out;
+  }
+  function restaurarDatos(c) {
+    // Las otras prestaciones se vuelven a crear con números nuevos de fila.
+    $('otrasList').innerHTML = '';
+    const viejas = Object.keys(c).map((k) => (k.match(/^otra(\d+)Concepto$/) || [])[1]).filter(Boolean).sort((a, b) => a - b);
+    const mapa = {};
+    viejas.forEach((v) => { addOtra(); mapa[v] = otraSeq - 1; });
+    if (!viejas.length) addOtra();
+    Object.entries(c).forEach(([k, v]) => {
+      const m = k.match(/^otra(\d+)(\w+)$/);
+      const el = $(m ? `otra${mapa[m[1]]}${m[2]}` : k);
+      if (!el) return;
+      if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+    });
+    $('f').querySelectorAll('select').forEach((el) => el.dispatchEvent(new Event('change')));
+  }
+  $('btnFolio').addEventListener('click', async () => {
+    if (!folioDatos || folioActual) return;
+    $('btnFolio').disabled = true;
+    $('btnFolio').textContent = 'Guardando…';
+    try {
+      const r = await fetch('/baugh/api/folios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...folioDatos, patron: $('patron').value, trabajador: $('nombreTrabajador').value, captura: capturarDatos() }),
+      });
+      if (r.status === 401) { location.href = '/baugh/login'; return; }
+      const d = await r.json();
+      if (!r.ok || !d.folio) throw new Error(d.error || 'error');
+      folioActual = d.folio;
+      mostrarFolio();
+    } catch (e) {
+      $('btnFolio').textContent = 'No se guardó';
+      setTimeout(mostrarFolio, 2000);
+    }
+  });
+  (async function abrirFolioDeLaLiga() {
+    const id = new URLSearchParams(location.search).get('folio');
+    if (!id || !location.pathname.startsWith('/baugh')) return;
+    try {
+      const r = await fetch(`/baugh/api/folios/${encodeURIComponent(id)}`);
+      if (!r.ok) throw new Error();
+      const f = await r.json();
+      restaurarDatos(f.captura || {});
+      calcular();
+      folioActual = f.folio;
+      mostrarFolio();
+    } catch (e) {
+      $('results').innerHTML = `<p class="empty-state">No se encontró el folio ${esc(id)}.</p>`;
+    }
+  })();
+
+  $('f').addEventListener('submit', function (e) { e.preventDefault(); folioActual = null; calcular();
     if ($('results').querySelector('.total-row') && window.registrarEvento) window.registrarEvento('calculo'); });
 
   function construirPdfBlob() { return construirPdfDoc().output('blob'); }
@@ -1615,6 +1731,7 @@ window.LORA_TTF = {
       if (draw) {
         doc.setFont('Lora', 'bold'); doc.setFontSize(s(18)); doc.setTextColor(17, 17, 17);
         doc.text('Calculadora de Finiquito', marginX, y);
+        if (folioActual) { doc.setFontSize(s(12)); doc.text(`Folio ${folioActual}`, rightX, y, { align: 'right' }); }
       }
       y += s(16);
       const marcaTiempo = new Date().toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -1790,7 +1907,7 @@ window.LORA_TTF = {
     const nombreCrudo = $('nombreTrabajador').value.trim().replace(/[\\/:*?"<>|]/g, '');
     const tipoDocArchivo = nombreTipoDocumento($('tipo').value);
     const fechaArchivo = $('baja').value.replace(/\//g, '-');
-    const filename = nombreCrudo ? `${nombreCrudo}-Cálculo de ${tipoDocArchivo}.pdf` : `Cálculo de ${tipoDocArchivo}-${fechaArchivo}.pdf`;
+    const filename = (folioActual ? `${folioActual} ` : '') + (nombreCrudo ? `${nombreCrudo}-Cálculo de ${tipoDocArchivo}.pdf` : `Cálculo de ${tipoDocArchivo}-${fechaArchivo}.pdf`);
     // Fuera de Claude (sitio propio) se usa el guardado nativo de jsPDF.
     const enClaudeArtifact = !!(window.claude && window.claude.use);
     if (!enClaudeArtifact && window.jspdf) {
@@ -1836,7 +1953,8 @@ window.LORA_TTF = {
   });
 
   $('f').addEventListener('input', function () {
-    if ($('results').querySelector('.total-row')) calcular();
+    folioActual = null;
+    if ($('results').querySelector('.total-row')) calcular(); else mostrarFolio();
   });
   $('f').addEventListener('change', function (e) {
     if (e.target.type === 'checkbox' && $('results').querySelector('.total-row')) calcular();
@@ -1864,7 +1982,7 @@ window.LORA_TTF = {
       { src: ICON_SVG, sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
     ],
   };
-  if (location.pathname.startsWith('/baugh')) { const b = $('btnSalir'); if (b) b.hidden = false; }
+  if (location.pathname.startsWith('/baugh')) { ['btnSalir', 'btnFolios', 'btnFolio'].forEach((id) => { const b = $(id); if (b) b.hidden = false; }); }
 
   // --- PWA: app instalable (manifest y service worker servidos por el sitio) ---
   // Dentro de un artefacto de Claude no hay service worker; ahí solo se ignora.

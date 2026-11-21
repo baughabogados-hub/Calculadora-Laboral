@@ -20,7 +20,7 @@
  *   CASTILLO_APP_KEY   clave de la app en El Castillo (por defecto "calculadora")
  *   BAUGH_PASSWORD     contraseña del equipo (si falta, solo se entra con El Castillo)
  *   SESSION_HOURS      duración de la sesión en horas (por defecto 12)
- *   DATA_DIR           carpeta de las estadísticas; en Railway, la ruta del volumen (p. ej. /data)
+ *   DATA_DIR           carpeta de las estadísticas y los folios; en Railway, la ruta del volumen (p. ej. /data)
  *   GA_ID              ID de medición de Google Analytics (G-XXXXXXX); vacío = sin Google Analytics
  */
 
@@ -29,6 +29,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const estadisticas = require('./estadisticas');
+const folios = require('./folios');
 
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
@@ -251,6 +252,8 @@ app.get('/baugh/api/diagnostico', async (req, res) => {
     session_secret_ok: !!SECRET,
     password_respaldo: !!BAUGH_PASSWORD,
     app_key: CASTILLO_APP_KEY,
+    // Sin volumen, estadísticas y folios se borran en cada despliegue.
+    datos_en_volumen: !!process.env.RAILWAY_VOLUME_MOUNT_PATH && path.resolve(estadisticas.DATA_DIR).startsWith(path.resolve(process.env.RAILWAY_VOLUME_MOUNT_PATH)),
   };
   if (!CASTILLO_URL) return res.json({ ...out, resultado: 'CASTILLO_URL vacía o inválida' });
   try {
@@ -370,6 +373,54 @@ app.use('/baugh', async (req, res, next) => {
 });
 app.get('/baugh/api/estadisticas', (req, res) => {
   res.set('Cache-Control', 'no-store').json(estadisticas.resumen());
+});
+// ---------- folios ----------
+// Iniciales del usuario de El Castillo para el número de folio (se consultan una vez y se guardan en memoria).
+const inicialesCache = new Map();
+async function usuarioFolio(s) {
+  if (s.via !== 'castillo') return { id: s.sub, nombre: s.name || 'Equipo', iniciales: 'EQ' };
+  let ini = inicialesCache.get(s.sub);
+  if (!ini && CASTILLO_ACTIVO) {
+    try {
+      const r = await castillo('/usuarios-selector');
+      if (r.ok && Array.isArray(r.data)) r.data.forEach((u) => { if (u.iniciales) inicialesCache.set(String(u.id), u.iniciales); });
+      ini = inicialesCache.get(String(s.sub));
+    } catch (e) { console.warn('Folios: no se pudieron leer las iniciales:', e.message); }
+  }
+  return { id: s.sub, nombre: s.name || '', iniciales: ini || '' };
+}
+app.get('/baugh/api/folios', (req, res) => {
+  res.set('Cache-Control', 'no-store').json(folios.lista());
+});
+app.post('/baugh/api/folios', express.json({ limit: '64kb' }), async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const f = folios.crear(req.body || {}, await usuarioFolio(leerSesion(req)));
+    res.json({ ok: true, folio: f.folio });
+  } catch (e) {
+    console.error('Folios: no se pudo guardar:', e.message);
+    res.status(500).json({ error: 'No se pudo guardar el folio.' });
+  }
+});
+app.get('/baugh/api/folios/:id', (req, res) => {
+  const f = folios.buscar(req.params.id);
+  res.set('Cache-Control', 'no-store');
+  return f ? res.json(f) : res.status(404).json({ error: 'Folio no encontrado.' });
+});
+app.patch('/baugh/api/folios/:id', express.json({ limit: '4kb' }), (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const f = folios.actualizar(req.params.id, req.body || {});
+    if (!f) return res.status(404).json({ error: 'Folio no encontrado.' });
+    const { captura, ...sinCaptura } = f;
+    res.json(sinCaptura);
+  } catch (e) {
+    console.error('Folios: no se pudo actualizar:', e.message);
+    res.status(500).json({ error: 'No se pudo guardar el cambio.' });
+  }
+});
+app.get('/baugh/folios', (req, res) => {
+  res.set('Cache-Control', 'no-store').sendFile(path.join(__dirname, 'views', 'folios.html'));
 });
 app.get('/baugh/estadisticas', (req, res) => {
   res.set('Cache-Control', 'no-store').sendFile(path.join(__dirname, 'views', 'estadisticas.html'));
